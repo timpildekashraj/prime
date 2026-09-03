@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Prime Health — HIS Patient Record</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; font-size: 13px; color: #222; }
+
+    /* ── HIS Top Bar ── */
+    .his-header {
+      background: #1a3a5c;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      height: 48px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .his-logo { font-weight: 800; font-size: 16px; letter-spacing: 0.03em; }
+    .his-logo span { color: #F37B20; }
+    .his-nav { display: flex; gap: 2px; }
+    .his-nav a {
+      color: #cbd5e1; text-decoration: none; padding: 6px 14px;
+      border-radius: 4px; font-size: 12px;
+    }
+    .his-nav a.active { background: #F37B20; color: #fff; font-weight: 600; }
+    .his-nav a:hover:not(.active) { background: rgba(255,255,255,0.1); color: #fff; }
+    .his-user { font-size: 11px; color: #94a3b8; display: flex; align-items: center; gap: 8px; }
+    .his-user .dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; }
+
+    /* ── Sub-nav / Breadcrumb ── */
+    .his-subnav {
+      background: #fff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 8px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .breadcrumb { font-size: 11px; color: #64748b; }
+    .breadcrumb b { color: #1a3a5c; }
+    .his-actions { display: flex; gap: 8px; }
+    .btn-his {
+      padding: 5px 14px; border-radius: 5px; font-size: 11px; font-weight: 600;
+      border: 1px solid #e2e8f0; background: #fff; color: #374151; cursor: pointer;
+    }
+    .btn-his.primary { background: #1a3a5c; color: #fff; border-color: #1a3a5c; }
+
+    /* ── Layout ── */
+    .his-body { display: flex; height: calc(100vh - 90px); overflow: hidden; }
+
+    /* ── Left sidebar — patient info ── */
+    .his-sidebar {
+      width: 220px;
+      background: #fff;
+      border-right: 1px solid #e2e8f0;
+      flex-shrink: 0;
+      overflow-y: auto;
+      padding: 12px;
+    }
+    .pat-photo {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: #dbeafe; display: flex; align-items: center; justify-content: center;
+      font-size: 24px; margin: 0 auto 10px;
+      border: 3px solid #1a3a5c;
+    }
+    .pat-name { text-align: center; font-weight: 700; font-size: 14px; color: #1a3a5c; }
+    .pat-name-ar { text-align: center; font-size: 12px; color: #64748b; direction: rtl; margin-top: 2px; }
+    .pat-id { text-align: center; font-size: 10px; color: #94a3b8; margin-top: 3px; letter-spacing: 0.05em; }
+
+    .divider { border: none; border-top: 1px solid #f1f5f9; margin: 10px 0; }
+
+    .info-row { display: flex; justify-content: space-between; padding: 3px 0; }
+    .info-label { font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
+    .info-val { font-size: 11px; font-weight: 600; color: #374151; }
+
+    .tag {
+      display: inline-block; padding: 2px 8px; border-radius: 20px;
+      font-size: 10px; font-weight: 700; margin-top: 6px;
+    }
+    .tag-vip  { background: #fef3c7; color: #92400e; }
+    .tag-ins  { background: #dbeafe; color: #1e40af; }
+
+    /* ── Centre — main clinical record ── */
+    .his-main { flex: 1; overflow-y: auto; padding: 16px; }
+
+    .section-card {
+      background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+      margin-bottom: 14px; overflow: hidden;
+    }
+    .section-head {
+      background: #f8fafc; border-bottom: 1px solid #e2e8f0;
+      padding: 8px 14px; font-weight: 700; font-size: 12px; color: #1a3a5c;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .section-head .tag-new {
+      font-size: 9px; background: #dcfce7; color: #15803d;
+      padding: 1px 6px; border-radius: 10px; font-weight: 600;
+    }
+    .section-body { padding: 12px 14px; }
+
+    .vitals-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .vital { text-align: center; }
+    .vital-val { font-size: 20px; font-weight: 800; color: #1a3a5c; }
+    .vital-unit { font-size: 9px; color: #94a3b8; }
+    .vital-label { font-size: 9px; color: #64748b; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .vital-ok { color: #16a34a; }
+    .vital-warn { color: #d97706; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    th { text-align: left; padding: 5px 8px; background: #f8fafc; color: #64748b;
+         font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid #e2e8f0; }
+    td { padding: 6px 8px; border-bottom: 1px solid #f1f5f9; color: #374151; }
+    tr:last-child td { border-bottom: none; }
+    .status-pill {
+      padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: 700;
+    }
+    .s-active  { background: #dcfce7; color: #15803d; }
+    .s-ongoing { background: #dbeafe; color: #1e40af; }
+    .s-review  { background: #fef3c7; color: #92400e; }
+
+    .note-box {
+      background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;
+      padding: 10px; font-size: 11px; color: #374151; line-height: 1.6;
+    }
+    .note-meta { font-size: 10px; color: #94a3b8; margin-top: 6px; }
+
+    /* ── Right panel — Patient 360 widget ── */
+    .his-widget-panel {
+      width: 420px;
+      flex-shrink: 0;
+      background: #f8fafc;
+      border-left: 2px solid #F37B20;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .widget-panel-head {
+      background: #fff;
+      padding: 8px 14px;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .widget-panel-title {
+      font-size: 11px; font-weight: 700; color: #F37B20;
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .widget-panel-sub { font-size: 9px; color: #94a3b8; }
+    .powered-by { font-size: 9px; color: #94a3b8; text-align: right; }
+
+    .widget-wrap {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+    }
+
+    iframe {
+      border: none;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      display: block;
+    }
+
+    /* MRN switcher */
+    .mrn-switcher {
+      background: #fff;
+      border-top: 1px solid #e2e8f0;
+      padding: 8px 14px;
+    }
+    .mrn-switcher label { font-size: 10px; color: #94a3b8; display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .mrn-row { display: flex; gap: 6px; }
+    .mrn-input {
+      flex: 1; border: 1px solid #e2e8f0; border-radius: 5px;
+      padding: 5px 8px; font-size: 11px; color: #374151; outline: none;
+    }
+    .mrn-input:focus { border-color: #F37B20; }
+    .mrn-btn {
+      padding: 5px 12px; background: #F37B20; color: #fff;
+      border: none; border-radius: 5px; font-size: 11px; font-weight: 700;
+      cursor: pointer;
+    }
+    .mrn-btn:hover { background: #e06b10; }
+  </style>
+</head>
+<body>
+
+  <!-- HIS Top Bar -->
+  <header class="his-header">
+    <div class="his-logo">Prime<span>Health</span> HIS</div>
+    <nav class="his-nav">
+      <a href="#">Dashboard</a>
+      <a href="#">Appointments</a>
+      <a href="#" class="active">Patient Records</a>
+      <a href="#">Clinical</a>
+      <a href="#">Reports</a>
+      <a href="#">Admin</a>
+    </nav>
+    <div class="his-user">
+      <div class="dot"></div>
+      Dr. Aisha Al Zaabi &nbsp;|&nbsp; Internal Medicine
+    </div>
+  </header>
+
+  <!-- Sub-nav -->
+  <div class="his-subnav">
+    <div class="breadcrumb">
+      Patient Records &rsaquo; <b>Sarah Thompson</b> &rsaquo; PH-502341
+    </div>
+    <div class="his-actions">
+      <button class="btn-his">📅 Book Appointment</button>
+      <button class="btn-his">🖨 Print Summary</button>
+      <button class="btn-his primary">+ New Encounter</button>
+    </div>
+  </div>
+
+  <!-- Main layout -->
+  <div class="his-body">
+
+    <!-- Left: Patient sidebar -->
+    <aside class="his-sidebar">
+      <div class="pat-photo">👩</div>
+      <div class="pat-name">Sarah Thompson</div>
+      <div class="pat-id">PH-502341</div>
+      <div style="text-align:center;margin-top:6px;">
+        <span class="tag tag-vip">⭐ VIP</span>
+        <span class="tag tag-ins">🏥 DAMAN</span>
+      </div>
+
+      <hr class="divider"/>
+
+      <div class="info-row"><span class="info-label">DOB</span><span class="info-val">14 Mar 1988</span></div>
+      <div class="info-row"><span class="info-label">Age</span><span class="info-val">38 yrs</span></div>
+      <div class="info-row"><span class="info-label">Gender</span><span class="info-val">Female</span></div>
+      <div class="info-row"><span class="info-label">Blood</span><span class="info-val">A+</span></div>
+      <div class="info-row"><span class="info-label">Nationality</span><span class="info-val">British</span></div>
+      <div class="info-row"><span class="info-label">Language</span><span class="info-val">English</span></div>
+
+      <hr class="divider"/>
+
+      <div class="info-row"><span class="info-label">Mobile</span><span class="info-val">+971 50 123 4567</span></div>
+      <div class="info-row"><span class="info-label">Email</span><span class="info-val" style="font-size:10px;">s.thompson@email.com</span></div>
+      <div class="info-row"><span class="info-label">Emirates ID</span><span class="info-val">784-1988-…</span></div>
+
+      <hr class="divider"/>
+
+      <div class="info-row"><span class="info-label">Insurance</span><span class="info-val">DAMAN Gold</span></div>
+      <div class="info-row"><span class="info-label">Policy No.</span><span class="info-val">DM-8821-XC</span></div>
+      <div class="info-row"><span class="info-label">Expiry</span><span class="info-val">31 Dec 2026</span></div>
+
+      <hr class="divider"/>
+
+      <div class="info-row"><span class="info-label">Reg. Date</span><span class="info-val">05 Jan 2022</span></div>
+      <div class="info-row"><span class="info-label">Last Visit</span><span class="info-val">08 Apr 2026</span></div>
+      <div class="info-row"><span class="info-label">Total Visits</span><span class="info-val">12</span></div>
+      <div class="info-row"><span class="info-label">Dept.</span><span class="info-val">Internal Med.</span></div>
+    </aside>
+
+    <!-- Centre: Clinical record -->
+    <main class="his-main">
+
+      <!-- Vitals -->
+      <div class="section-card">
+        <div class="section-head">
+          Latest Vitals
+          <span style="font-size:10px;color:#94a3b8;">Recorded 08 Apr 2026 — 10:14</span>
+        </div>
+        <div class="section-body">
+          <div class="vitals-grid">
+            <div class="vital">
+              <div class="vital-val vital-warn">138/90</div>
+              <div class="vital-unit">mmHg</div>
+              <div class="vital-label">Blood Pressure</div>
+            </div>
+            <div class="vital">
+              <div class="vital-val vital-ok">72</div>
+              <div class="vital-unit">bpm</div>
+              <div class="vital-label">Heart Rate</div>
+            </div>
+            <div class="vital">
+              <div class="vital-val vital-ok">98.2</div>
+              <div class="vital-unit">°F</div>
+              <div class="vital-label">Temperature</div>
+            </div>
+            <div class="vital">
+              <div class="vital-val vital-ok">99%</div>
+              <div class="vital-unit">SpO₂</div>
+              <div class="vital-label">Oxygen Sat.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Conditions -->
+      <div class="section-card">
+        <div class="section-head">Active Conditions & Diagnoses</div>
+        <div class="section-body" style="padding:0;">
+          <table>
+            <thead>
+              <tr><th>Condition</th><th>ICD-10</th><th>Since</th><th>Status</th><th>Physician</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Essential Hypertension</td>
+                <td>I10</td>
+                <td>Jan 2024</td>
+                <td><span class="status-pill s-ongoing">Ongoing</span></td>
+                <td>Dr. Al Zaabi</td>
+              </tr>
+              <tr>
+                <td>Type 2 Diabetes Mellitus</td>
+                <td>E11</td>
+                <td>Mar 2023</td>
+                <td><span class="status-pill s-ongoing">Ongoing</span></td>
+                <td>Dr. Al Zaabi</td>
+              </tr>
+              <tr>
+                <td>Vitamin D Deficiency</td>
+                <td>E55.9</td>
+                <td>Nov 2025</td>
+                <td><span class="status-pill s-active">Active</span></td>
+                <td>Dr. Hassan</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Medications -->
+      <div class="section-card">
+        <div class="section-head">
+          Current Medications
+          <span class="tag-new">3 Active</span>
+        </div>
+        <div class="section-body" style="padding:0;">
+          <table>
+            <thead>
+              <tr><th>Drug</th><th>Dosage</th><th>Frequency</th><th>Since</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Amlodipine</td>
+                <td>5mg</td>
+                <td>Once daily</td>
+                <td>Jan 2024</td>
+                <td><span class="status-pill s-active">Active</span></td>
+              </tr>
+              <tr>
+                <td>Metformin HCl</td>
+                <td>500mg</td>
+                <td>Twice daily</td>
+                <td>Mar 2023</td>
+                <td><span class="status-pill s-active">Active</span></td>
+              </tr>
+              <tr>
+                <td>Vitamin D3</td>
+                <td>5000 IU</td>
+                <td>Once weekly</td>
+                <td>Nov 2025</td>
+                <td><span class="status-pill s-review">Review due</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Last clinical note -->
+      <div class="section-card">
+        <div class="section-head">Latest Clinical Note — Dr. Al Zaabi · 08 Apr 2026</div>
+        <div class="section-body">
+          <div class="note-box">
+            Patient presents for routine follow-up of hypertension and T2DM. BP slightly elevated at 138/90 — counselled on dietary sodium reduction and medication adherence. HbA1c at 7.1% (down from 7.6%). Continue current Metformin dose. Vitamin D repeat bloods ordered. Patient expressed concerns about billing dispute from previous visit — referred to patient relations.
+          </div>
+          <div class="note-meta">📝 Signed off · Internal Medicine · SOAP Note</div>
+        </div>
+      </div>
+
+      <!-- Lab results -->
+      <div class="section-card">
+        <div class="section-head">Recent Lab Results</div>
+        <div class="section-body" style="padding:0;">
+          <table>
+            <thead>
+              <tr><th>Test</th><th>Result</th><th>Reference</th><th>Status</th><th>Date</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>HbA1c</td>
+                <td>7.1%</td>
+                <td>&lt; 7.0%</td>
+                <td><span class="status-pill s-review">High</span></td>
+                <td>05 Apr 2026</td>
+              </tr>
+              <tr>
+                <td>Fasting Glucose</td>
+                <td>6.8 mmol/L</td>
+                <td>3.9–5.5</td>
+                <td><span class="status-pill s-review">High</span></td>
+                <td>05 Apr 2026</td>
+              </tr>
+              <tr>
+                <td>Vitamin D (25-OH)</td>
+                <td>18 ng/mL</td>
+                <td>30–100</td>
+                <td><span class="status-pill s-review">Low</span></td>
+                <td>05 Apr 2026</td>
+              </tr>
+              <tr>
+                <td>Total Cholesterol</td>
+                <td>4.9 mmol/L</td>
+                <td>&lt; 5.0</td>
+                <td><span class="status-pill s-active">Normal</span></td>
+                <td>05 Apr 2026</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Right: Patient 360 Widget panel -->
+    <aside class="his-widget-panel">
+      <div class="widget-panel-head">
+        <div>
+          <div class="widget-panel-title">Patient 360</div>
+          <div class="widget-panel-sub">Non-clinical engagement status · Live</div>
+        </div>
+        <div class="powered-by">Powered by<br><b style="color:#F37B20;">eMINDS</b></div>
+      </div>
+
+      <div class="widget-wrap">
+        <iframe
+          id="p360-widget"
+          src="https://quail-obliging-rarely.ngrok-free.app/widget?mrn=PH-502341"
+          width="396"
+          height="700"
+          title="Patient 360 Non-Clinical Status">
+        </iframe>
+      </div>
+
+      <!-- MRN switcher — so you can demo any patient -->
+      <div class="mrn-switcher">
+        <label>Switch patient (demo)</label>
+        <div class="mrn-row">
+          <input class="mrn-input" id="mrn-input" type="text" value="PH-502341" placeholder="e.g. PH-204817"/>
+          <button class="mrn-btn" onclick="switchPatient()">Load</button>
+        </div>
+        <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
+          <button onclick="setMrn('PH-204817')" style="font-size:9px;padding:3px 8px;border:1px solid #e2e8f0;border-radius:4px;cursor:pointer;background:#f8fafc;color:#374151;">🟢 Ahmed</button>
+          <button onclick="setMrn('PH-304125')" style="font-size:9px;padding:3px 8px;border:1px solid #e2e8f0;border-radius:4px;cursor:pointer;background:#f8fafc;color:#374151;">🟢 Fatima</button>
+          <button onclick="setMrn('PH-119832')" style="font-size:9px;padding:3px 8px;border:1px solid #e2e8f0;border-radius:4px;cursor:pointer;background:#f8fafc;color:#374151;">🟡 Rajesh</button>
+          <button onclick="setMrn('PH-502341')" style="font-size:9px;padding:3px 8px;border:1px solid #e2e8f0;border-radius:4px;cursor:pointer;background:#f8fafc;color:#374151;">🔴 Sarah</button>
+          <button onclick="setMrn('PH-671204')" style="font-size:9px;padding:3px 8px;border:1px solid #e2e8f0;border-radius:4px;cursor:pointer;background:#f8fafc;color:#374151;">🟡 Mohammed</button>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <script>
+    const BASE = 'https://quail-obliging-rarely.ngrok-free.app';
+
+    const PATIENT_EXTRAS = {
+      'PH-204817': { photo:'👨', dob:'12 Jun 1982', age:'43 yrs', gender:'Male',   blood:'O+',  nationality:'Emirati',    mobile:'+971 50 234 5678', email:'ahmed.almansoori@email.com', eid:'784-1982-…', insurance:'Daman Enhanced', policy:'DM-4421-AH', expiry:'31 Dec 2026', reg:'10 Mar 2020', dept:'Internal Med.' },
+      'PH-304125': { photo:'👩', dob:'05 Sep 1990', age:'35 yrs', gender:'Female', blood:'B+',  nationality:'Emirati',    mobile:'+971 55 876 5432', email:'fatima.rashidi@email.com',   eid:'784-1990-…', insurance:'Daman Premium', policy:'DM-7712-FR', expiry:'30 Jun 2026', reg:'15 Jan 2021', dept:'Obstetrics' },
+      'PH-119832': { photo:'👨', dob:'28 Feb 1979', age:'47 yrs', gender:'Male',   blood:'A-',  nationality:'Indian',     mobile:'+971 52 345 6789', email:'rajesh.menon@email.com',     eid:'784-1979-…', insurance:'AXA Gulf',     policy:'AX-3391-RM', expiry:'31 Mar 2027', reg:'22 Jul 2019', dept:'Cardiology'  },
+      'PH-502341': { photo:'👩', dob:'14 Mar 1988', age:'38 yrs', gender:'Female', blood:'A+',  nationality:'British',    mobile:'+971 50 123 4567', email:'s.thompson@email.com',       eid:'784-1988-…', insurance:'Daman Gold',    policy:'DM-8821-XC', expiry:'31 Dec 2026', reg:'05 Jan 2022', dept:'Internal Med.' },
+      'PH-671204': { photo:'👨', dob:'03 Nov 1975', age:'50 yrs', gender:'Male',   blood:'AB+', nationality:'Emirati',    mobile:'+971 54 987 6543', email:'m.alhamdan@email.com',       eid:'784-1975-…', insurance:'Neuron',       policy:'NR-1102-MH', expiry:'28 Feb 2027', reg:'08 Aug 2018', dept:'Orthopaedics' },
+    };
+
+    async function switchPatient() {
+      const mrn = document.getElementById('mrn-input').value.trim().toUpperCase();
+      if (!mrn) return;
+
+      // Update iframe immediately
+      document.getElementById('p360-widget').src = `${BASE}/widget?mrn=${mrn}`;
+
+      // Fetch patient from API to update sidebar
+      try {
+        const res = await fetch(`${BASE}/api/patients/${mrn}`);
+        if (!res.ok) return;
+        const p = await res.json();
+        const ex = PATIENT_EXTRAS[mrn] || {};
+
+        // Breadcrumb
+        document.querySelector('.breadcrumb').innerHTML =
+          `Patient Records &rsaquo; <b>${p.name}</b> &rsaquo; ${mrn}`;
+
+        // Sidebar photo + name
+        document.querySelector('.pat-photo').textContent = ex.photo || '🧑';
+        document.querySelector('.pat-name').textContent  = p.name;
+        document.querySelector('.pat-id').textContent    = mrn;
+
+        // Info rows helper
+        const set = (label, val) => {
+          const rows = document.querySelectorAll('.info-row');
+          rows.forEach(row => {
+            if (row.querySelector('.info-label')?.textContent === label)
+              row.querySelector('.info-val').textContent = val;
+          });
+        };
+
+        set('DOB',         ex.dob         || '—');
+        set('Age',         ex.age         || `${p.age} yrs`);
+        set('Gender',      ex.gender      || '—');
+        set('Blood',       ex.blood       || '—');
+        set('Nationality', ex.nationality || '—');
+        set('Language',    p.preferred_language || '—');
+        set('Mobile',      ex.mobile      || '—');
+        set('Emirates ID', ex.eid         || '—');
+        set('Insurance',   ex.insurance   || '—');
+        set('Policy No.',  ex.policy      || '—');
+        set('Expiry',      ex.expiry      || '—');
+        set('Reg. Date',   ex.reg         || '—');
+        set('Last Visit',  p.last_visit   || '—');
+        set('Total Visits',String(p.total_visits_12m || '—'));
+        set('Dept.',       ex.dept        || p.last_clinic || '—');
+
+        // Update email separately (different class needed)
+        document.querySelectorAll('.info-val').forEach(el => {
+          if (el.textContent.includes('@')) el.textContent = ex.email || '—';
+        });
+
+      } catch(e) { /* silent — widget still loads */ }
+    }
+
+    function setMrn(mrn) {
+      document.getElementById('mrn-input').value = mrn;
+      switchPatient();
+    }
+
+    // Load default patient on page open
+    switchPatient();
+  </script>
+</body>
+</html>

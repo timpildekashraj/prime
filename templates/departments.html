@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Patient 360 — Department Analytics</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: { prime: { navy:'#0E2841', blue:'#156082', orange:'#F37B20', lblue:'#0F9ED5', gray:'#6D6E70' } } } }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+
+<body class="bg-gray-50 text-gray-900 font-sans min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-white border-b-4 border-prime-orange flex items-center justify-between px-6 py-3 shrink-0 shadow-sm">
+    <div class="flex items-center gap-4">
+      <div class="text-prime-orange font-black text-xl tracking-wide">Patient 360</div>
+      <div class="border-l border-gray-200 pl-4">
+        <div class="text-gray-800 text-xs font-semibold tracking-wide uppercase">Non-Clinical Patient Engagement</div>
+        <div class="text-prime-orange text-xs font-medium">Department Analytics &nbsp;·&nbsp; Powered by Enterprise Minds</div>
+      </div>
+    </div>
+
+    <!-- Navigation tabs -->
+    <div class="flex items-center gap-2">
+      <a href="/" class="px-4 py-2 rounded-lg text-sm text-prime-gray hover:text-gray-900 hover:bg-gray-100 transition-colors">
+        Staff View
+      </a>
+      <a href="/departments" class="px-4 py-2 rounded-lg text-sm font-semibold bg-prime-orange text-white">
+        Department View
+      </a>
+    </div>
+
+    <div class="flex items-center gap-4 text-sm text-prime-gray">
+      <span class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+        Live Demo
+      </span>
+      <span class="text-gray-400 text-xs">eMINDS © 2026</span>
+    </div>
+  </header>
+
+  <!-- Summary Bar -->
+  <div class="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
+    <div class="grid grid-cols-4 gap-6" id="summary-bar">
+      <div class="text-center">
+        <div class="text-2xl font-black text-gray-900" id="sum-total">—</div>
+        <div class="text-xs text-prime-gray uppercase tracking-widest mt-1">Total Signals</div>
+      </div>
+      <div class="text-center">
+        <div class="text-2xl font-black text-green-600" id="sum-positive">—</div>
+        <div class="text-xs text-prime-gray uppercase tracking-widest mt-1">Positive</div>
+      </div>
+      <div class="text-center">
+        <div class="text-2xl font-black text-red-600" id="sum-negative">—</div>
+        <div class="text-xs text-prime-gray uppercase tracking-widest mt-1">Negative</div>
+      </div>
+      <div class="text-center">
+        <div class="text-2xl font-black text-prime-orange" id="sum-satisfaction">—</div>
+        <div class="text-xs text-prime-gray uppercase tracking-widest mt-1">Overall Satisfaction</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <main class="flex-1 p-6">
+
+    <!-- Page title -->
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="text-xl font-bold text-gray-900">Department Performance Overview</h1>
+        <p class="text-prime-gray text-sm mt-1">Aggregated non-clinical patient feedback across all departments</p>
+      </div>
+      <div class="flex items-center gap-3 text-xs text-prime-gray">
+        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span> Positive</span>
+        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-red-500 inline-block"></span> Negative</span>
+        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-gray-300 inline-block"></span> Neutral</span>
+      </div>
+    </div>
+
+    <!-- Department cards grid -->
+    <div id="dept-grid" class="grid grid-cols-3 gap-5">
+      <div class="col-span-3 text-center text-prime-gray py-16">Loading departments...</div>
+    </div>
+
+  </main>
+
+  <script>
+    const BAND = {
+      green: { border:'border-green-400', badge:'bg-green-600', dot:'bg-green-400', label:'Positive',  text:'text-green-600' },
+      amber: { border:'border-amber-400', badge:'bg-amber-500', dot:'bg-amber-400', label:'Monitor',    text:'text-amber-600' },
+      red:   { border:'border-red-500',   badge:'bg-red-600',   dot:'bg-red-400',   label:'At Risk',    text:'text-red-600'   },
+    };
+
+    const CHANNEL_ICONS = {
+      whatsapp:'💬', email:'📧', phone:'📞', google:'⭐',
+      doctify:'🏥', survey:'📋', kiosk:'🖥', app:'📱',
+    };
+
+    const DEPT_ICONS = {
+      reception:'🏨', appointment:'📅', wait_time:'⏱',
+      doctor_consultation:'🩺', nursing_staff:'👩‍⚕️', pharmacy:'💊',
+      billing:'💳', facility:'🏥', care_coordination:'🔄', general:'💬',
+    };
+
+    const sentColor = s => s === 'positive' ? 'text-green-600' : s === 'negative' ? 'text-red-600' : 'text-gray-400';
+    const urgColor  = u => u === 'critical' ? 'text-red-600' : u === 'high' ? 'text-orange-500' : u === 'medium' ? 'text-amber-500' : 'text-gray-400';
+
+    let chartInstances = {};
+
+    async function loadDepartments() {
+      const res  = await fetch('/api/departments', { headers: { 'ngrok-skip-browser-warning': 'true' } });
+      const data = await res.json();
+
+      // Summary bar
+      let total = 0, positive = 0, negative = 0;
+      Object.values(data).forEach(d => {
+        total    += d.total;
+        positive += d.positive;
+        negative += d.negative;
+      });
+      document.getElementById('sum-total').textContent       = total;
+      document.getElementById('sum-positive').textContent    = positive;
+      document.getElementById('sum-negative').textContent    = negative;
+      document.getElementById('sum-satisfaction').textContent =
+        total > 0 ? Math.round(positive / total * 100) + '%' : '—';
+
+      // Department cards
+      const grid = document.getElementById('dept-grid');
+      grid.innerHTML = '';
+
+      Object.entries(data).forEach(([topic, dept]) => {
+        const b   = BAND[dept.band] || BAND.green;
+        const icon = DEPT_ICONS[topic] || '📋';
+
+        const card = document.createElement('div');
+        card.className = `bg-white rounded-xl border-2 ${b.border} p-5 flex flex-col gap-4 cursor-pointer hover:shadow-md hover:ring-2 hover:ring-prime-orange transition-all shadow-sm`;
+        card.onclick = () => openDeptModal(topic);
+        card.innerHTML = `
+          <!-- Card header -->
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-3">
+              <div class="text-3xl">${icon}</div>
+              <div>
+                <div class="font-bold text-gray-900 text-base">${dept.label}</div>
+                <div class="text-xs text-prime-gray mt-0.5">${dept.patients_affected} patient${dept.patients_affected !== 1 ? 's' : ''} · ${dept.total} signal${dept.total !== 1 ? 's' : ''}</div>
+              </div>
+            </div>
+            <div class="flex flex-col items-end gap-1">
+              <span class="${b.badge} text-white text-xs font-bold px-2 py-0.5 rounded-full">${b.label}</span>
+              <span class="text-xs ${b.text} font-semibold">${dept.satisfaction_pct}% positive</span>
+            </div>
+          </div>
+
+          <!-- Sentiment bar -->
+          <div>
+            <div class="flex items-center gap-1 mb-1 text-xs text-prime-gray">
+              <span>Sentiment breakdown</span>
+            </div>
+            <div class="flex h-3 rounded-full overflow-hidden gap-0.5">
+              ${dept.positive > 0 ? `<div class="bg-green-500" style="flex:${dept.positive}" title="${dept.positive} positive"></div>` : ''}
+              ${dept.neutral  > 0 ? `<div class="bg-gray-300"  style="flex:${dept.neutral}"  title="${dept.neutral} neutral"></div>`  : ''}
+              ${dept.negative > 0 ? `<div class="bg-red-500"   style="flex:${dept.negative}" title="${dept.negative} negative"></div>` : ''}
+            </div>
+            <div class="flex justify-between text-xs mt-1">
+              <span class="text-green-600">${dept.positive} positive</span>
+              <span class="text-prime-gray">${dept.neutral} neutral</span>
+              <span class="text-red-600">${dept.negative} negative</span>
+            </div>
+          </div>
+
+          <!-- Recent feedback -->
+          <div class="flex-1">
+            <div class="text-xs text-prime-gray uppercase tracking-widest mb-2">Recent Feedback</div>
+            <div class="space-y-2">
+              ${dept.recent.map(s => `
+                <div class="bg-gray-50 rounded-lg p-2.5 border border-gray-100">
+                  <div class="flex items-center justify-between mb-1">
+                    <div class="flex items-center gap-1.5">
+                      <span>${CHANNEL_ICONS[s.channel] || '💬'}</span>
+                      <a href="/?patient=${s.patient_id}" class="text-xs font-semibold text-gray-900 hover:text-prime-orange underline underline-offset-2 cursor-pointer">${s.patient_name}</a>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs ${urgColor(s.urgency)} uppercase font-medium">${s.urgency}</span>
+                      <span class="text-xs text-gray-400">${s.date}</span>
+                    </div>
+                  </div>
+                  <div class="text-xs text-prime-gray leading-relaxed line-clamp-2">${s.text}</div>
+                  <div class="mt-1">
+                    <span class="text-xs ${sentColor(s.sentiment)} font-semibold capitalize">${s.sentiment}</span>
+                  </div>
+                </div>
+              `).join('')}
+              ${dept.recent.length === 0 ? '<div class="text-prime-gray text-xs text-center py-2">No signals yet</div>' : ''}
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', loadDepartments);
+
+    // ── Department Drill-Down Modal ───────────────────────────────────────────
+
+    let modalAllSignals = [];
+    let activeFilter    = 'all';
+
+    async function openDeptModal(topic) {
+      const res  = await fetch(`/api/departments/${topic}`, { headers: { 'ngrok-skip-browser-warning': 'true' } });
+      const data = await res.json();
+
+      modalAllSignals = data.signals;
+      activeFilter    = 'all';
+
+      const b = BAND[data.band] || BAND.green;
+
+      // Title + meta
+      document.getElementById('modal-title').textContent =
+        `${DEPT_ICONS[topic] || '📋'}  ${data.label}`;
+      document.getElementById('modal-meta').textContent =
+        `${data.total} signal${data.total !== 1 ? 's' : ''} · ${data.patients_affected ?? ''} · ${data.satisfaction_pct}% positive`;
+
+      // Tabs
+      const tabs = document.getElementById('modal-tabs');
+      tabs.innerHTML = ['all', 'positive', 'neutral', 'negative'].map(f => {
+        const count = f === 'all' ? data.total : data[f];
+        const active = f === 'all';
+        return `
+          <button
+            id="tab-${f}"
+            onclick="filterModal('${f}')"
+            class="text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${active ? 'bg-prime-orange text-white' : 'bg-gray-100 text-prime-gray hover:text-gray-900'}"
+          >${f.charAt(0).toUpperCase() + f.slice(1)} (${count})</button>
+        `;
+      }).join('');
+
+      renderModalSignals(modalAllSignals, 'all');
+      document.getElementById('dept-modal').classList.remove('hidden');
+    }
+
+    function filterModal(sentiment) {
+      activeFilter = sentiment;
+      ['all', 'positive', 'neutral', 'negative'].forEach(f => {
+        const btn = document.getElementById(`tab-${f}`);
+        if (!btn) return;
+        btn.className = `text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${
+          f === sentiment ? 'bg-prime-orange text-white' : 'bg-gray-100 text-prime-gray hover:text-gray-900'
+        }`;
+      });
+      renderModalSignals(modalAllSignals, sentiment);
+    }
+
+    function renderModalSignals(signals, filter) {
+      const list = filter === 'all' ? signals : signals.filter(s => s.sentiment === filter);
+      const container = document.getElementById('modal-signals');
+
+      if (list.length === 0) {
+        container.innerHTML = `<div class="text-prime-gray text-sm text-center py-8">No ${filter} signals for this department</div>`;
+        return;
+      }
+
+      container.innerHTML = list.map(s => {
+        const borderCls = s.sentiment === 'positive' ? 'border-green-400' : s.sentiment === 'negative' ? 'border-red-400' : 'border-gray-300';
+        const sentCls   = sentColor(s.sentiment);
+        return `
+          <div class="bg-gray-50 rounded-lg border-l-4 ${borderCls} p-4 border border-gray-100">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <span class="text-base">${CHANNEL_ICONS[s.channel] || '💬'}</span>
+                <a href="/?patient=${s.patient_id}" class="text-sm font-semibold text-gray-900 hover:text-prime-orange underline underline-offset-2">${s.patient_name}</a>
+              </div>
+              <span class="text-xs text-gray-400">${s.date}</span>
+            </div>
+            <div class="text-sm text-prime-gray leading-relaxed">${s.text}</div>
+            <div class="mt-2">
+              <span class="text-xs ${sentCls} font-semibold capitalize">${s.sentiment}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function closeDeptModal() {
+      document.getElementById('dept-modal').classList.add('hidden');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('dept-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeDeptModal();
+      });
+    });
+
+  </script>
+
+  <!-- Department Drill-Down Modal -->
+  <div id="dept-modal" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-6">
+    <div class="bg-white rounded-xl border border-gray-200 shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col">
+
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
+        <div>
+          <div id="modal-title" class="text-lg font-bold text-gray-900"></div>
+          <div id="modal-meta" class="text-xs text-prime-gray mt-1"></div>
+        </div>
+        <button onclick="closeDeptModal()" class="text-gray-400 hover:text-gray-900 text-3xl leading-none">&times;</button>
+      </div>
+
+      <!-- Sentiment Filter Tabs -->
+      <div id="modal-tabs" class="flex gap-2 px-6 py-3 border-b border-gray-200 shrink-0 bg-gray-50"></div>
+
+      <!-- Signal List -->
+      <div id="modal-signals" class="flex-1 overflow-y-auto p-6 space-y-3"></div>
+
+    </div>
+  </div>
+
+</body>
+</html>

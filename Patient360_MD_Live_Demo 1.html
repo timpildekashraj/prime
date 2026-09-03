@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Patient 360 · MD Monday View · Prime Health Group</title>
+<style>
+:root{
+  --navy:#102340; --blue:#1D5B98; --blue-soft:#EAF2FA; --paper:#F4F7FB; --card:#FFFFFF;
+  --line:#DFE8F2; --line2:#C7D6E8; --ink:#1F2B3D; --muted:#5B677A; --faint:#8CA0B3;
+  --good:#1E8E64; --good-bg:#E6F4EE; --warn:#C98A1E; --warn-bg:#FBF1DC; --bad:#C4534A; --bad-bg:#F9E9E7;
+  --gold:#E8B54A; --gold-dark:#B8862C; --radius:12px; --radius-sm:8px;
+  --shadow:0 1px 2px rgba(16,35,64,.06),0 4px 14px rgba(16,35,64,.06);
+  --font:"Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{font-size:16px}
+body{font-family:var(--font);background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased}
+button{font-family:var(--font);cursor:pointer;border:none;background:none}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:4px}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---------- header ---------- */
+.topbar{background:var(--navy);color:#fff;padding:14px 28px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;position:sticky;top:0;z-index:50}
+.brand{display:flex;flex-direction:column;gap:2px;margin-right:8px}
+.kicker{font-size:.62rem;letter-spacing:.22em;color:#8CA0B3;font-weight:600}
+.brand h1{font-size:1.05rem;font-weight:700;letter-spacing:.01em;display:flex;align-items:center;gap:10px}
+.live{display:inline-flex;align-items:center;gap:6px;font-size:.68rem;font-weight:600;color:#9FDAB9;letter-spacing:.06em}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#3FBF7F;animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(63,191,127,.5)}70%{box-shadow:0 0 0 7px rgba(63,191,127,0)}100%{box-shadow:0 0 0 0 rgba(63,191,127,0)}}
+.demo-chip{font-size:.62rem;font-weight:600;letter-spacing:.05em;color:#F3D9A2;border:1px solid rgba(232,181,74,.55);padding:3px 9px;border-radius:99px;white-space:nowrap}
+.topbar .spacer{flex:1}
+.seg{display:flex;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:9px;padding:3px;gap:2px}
+.seg button{color:#C9D6E4;font-size:.78rem;font-weight:600;padding:6px 13px;border-radius:7px;transition:background .15s,color .15s}
+.seg button.on{background:#fff;color:var(--navy)}
+.seg button:hover:not(.on){background:rgba(255,255,255,.1)}
+.tb-btn{display:inline-flex;align-items:center;gap:8px;font-size:.82rem;font-weight:600;padding:9px 15px;border-radius:9px;color:#E4ECF5;border:1px solid rgba(255,255,255,.22);position:relative;transition:background .15s}
+.tb-btn:hover{background:rgba(255,255,255,.1)}
+.tb-btn .badge{position:absolute;top:-7px;right:-7px;min-width:19px;height:19px;border-radius:99px;background:var(--gold);color:var(--navy);font-size:.68rem;font-weight:800;display:none;align-items:center;justify-content:center;padding:0 5px}
+.tb-btn .badge.show{display:inline-flex}
+.ask-btn{background:var(--gold);color:var(--navy);border:1px solid var(--gold);font-weight:800}
+.ask-btn:hover{background:#F0C266}
+.subbar{background:#fff;border-bottom:1px solid var(--line);padding:8px 28px;display:flex;gap:18px;align-items:center;font-size:.72rem;color:var(--faint);flex-wrap:wrap}
+.subbar b{color:var(--muted);font-weight:600}
+.subbar .dot{color:var(--line2)}
+.chipbar{display:none;align-items:center;gap:8px}
+.chipbar.show{display:inline-flex}
+.fchip{display:inline-flex;align-items:center;gap:6px;background:var(--blue-soft);border:1px solid var(--line2);color:var(--blue);font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:99px}
+.fchip button{color:var(--blue);font-weight:800;font-size:.8rem;line-height:1}
+
+/* ---------- layout ---------- */
+.wrap{max-width:1440px;margin:0 auto;padding:22px 28px 60px}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:16px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.kpi .lab{font-size:.64rem;letter-spacing:.14em;font-weight:700;color:var(--faint);margin-bottom:8px}
+.kpi .val{font-size:1.85rem;font-weight:800;color:var(--navy);line-height:1;letter-spacing:-.01em}
+.kpi .val small{font-size:.95rem;font-weight:700;color:var(--muted)}
+.kpi .sub{font-size:.74rem;margin-top:7px;color:var(--muted)}
+.kpi .sub .up{color:var(--good);font-weight:700}
+.kpi .sub .down{color:var(--bad);font-weight:700}
+.kpi .sub .warncol{color:var(--warn);font-weight:700}
+
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:16px;align-items:start}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px}
+.panel-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:14px}
+.panel-h h2{font-size:.92rem;font-weight:700;color:var(--navy)}
+.panel-h .hint{font-size:.7rem;color:var(--faint)}
+
+/* ---------- heatmap ---------- */
+.hm{display:grid;grid-template-columns:110px repeat(5,1fr);gap:8px;align-items:center}
+.hm .hm-col{font-size:.66rem;letter-spacing:.1em;font-weight:700;color:var(--faint);text-align:center}
+.hm .hm-row{font-size:.8rem;font-weight:700;color:var(--ink)}
+.hm .hm-row small{display:block;font-weight:500;color:var(--faint);font-size:.66rem;margin-top:1px}
+.cell{border:none;border-radius:99px;padding:8px 4px;text-align:center;font-size:.8rem;font-weight:800;transition:transform .12s,box-shadow .12s;width:100%}
+.cell:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(16,35,64,.16)}
+.cell small{display:block;font-size:.58rem;font-weight:600;letter-spacing:.04em;opacity:.85}
+.c-good{background:var(--good-bg);color:var(--good)}
+.c-warn{background:var(--warn-bg);color:var(--warn)}
+.c-bad{background:var(--bad-bg);color:var(--bad)}
+.hm-dim{opacity:.28}
+.legend{display:flex;gap:16px;margin-top:14px;font-size:.68rem;color:var(--muted);align-items:center;flex-wrap:wrap}
+.lg{display:inline-flex;align-items:center;gap:6px}
+.sw{width:12px;height:12px;border-radius:4px}
+
+/* ---------- worklist ---------- */
+table{width:100%;border-collapse:collapse;font-size:.8rem}
+thead th{text-align:left;font-size:.62rem;letter-spacing:.12em;color:var(--faint);font-weight:700;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+tbody td{padding:10px;border-bottom:1px solid #EEF3F9;vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#F8FAFD}
+.case-id{font-weight:700;color:var(--navy)}
+.case-sub{font-size:.68rem;color:var(--faint);margin-top:2px}
+.chan{display:inline-flex;align-items:center;gap:7px;font-weight:600;color:var(--ink);white-space:nowrap}
+.chan svg{width:15px;height:15px;color:var(--blue);flex:none}
+.sent{display:inline-flex;align-items:center;gap:6px;font-size:.74rem;font-weight:600;white-space:nowrap}
+.sent i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.s-neg i{background:var(--bad)}.s-neg{color:var(--bad)}
+.s-pos i{background:var(--good)}.s-pos{color:var(--good)}
+.s-neu i{background:var(--faint)}.s-neu{color:var(--muted)}
+.owner{font-size:.76rem;color:var(--ink);font-weight:600}
+.sla{font-weight:800}
+.sla small{display:block;font-size:.6rem;font-weight:600;letter-spacing:.06em;color:var(--faint)}
+.sla-ok{color:var(--good)}.sla-risk{color:var(--warn)}.sla-bad{color:var(--bad)}
+.st{display:inline-block;font-size:.66rem;font-weight:700;letter-spacing:.03em;padding:4px 10px;border-radius:99px;white-space:nowrap}
+.st-open{background:var(--blue-soft);color:var(--blue)}
+.st-esc{background:var(--warn-bg);color:var(--warn)}
+.st-app{background:#FBF3DF;color:var(--gold-dark);border:1px solid #EED9A6}
+.st-done{background:var(--good-bg);color:var(--good)}
+.st-brk{background:var(--bad-bg);color:var(--bad)}
+.row-actions{display:flex;gap:6px;justify-content:flex-end}
+.mini{font-size:.7rem;font-weight:700;padding:5px 10px;border-radius:7px;border:1px solid var(--line2);color:var(--blue);background:#fff;white-space:nowrap;transition:background .12s}
+.mini:hover{background:var(--blue-soft)}
+.mini.gold{border-color:#EED9A6;color:var(--gold-dark);background:#FFFDF6}
+.mini.gold:hover{background:#FBF3DF}
+.mini.ghost{border-color:transparent;color:var(--faint)}
+.mini:disabled{opacity:.55;cursor:default}
+
+/* ---------- right column ---------- */
+.bars{display:flex;flex-direction:column;gap:11px}
+.bar-row{display:grid;grid-template-columns:96px 1fr 44px;align-items:center;gap:10px}
+.bar-name{font-size:.76rem;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:7px;background:none;text-align:left;padding:0}
+.bar-name:hover{color:var(--blue)}
+.bar-name svg{width:14px;height:14px;color:var(--blue);flex:none}
+.track{position:relative;height:12px;background:#EDF2F8;border-radius:99px;overflow:visible}
+.fill{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:var(--blue)}
+.fill.low{background:var(--bad)}
+.fill.mid{background:var(--warn)}
+.target{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--navy);opacity:.55;border-radius:2px}
+.bar-val{font-size:.78rem;font-weight:800;text-align:right;color:var(--navy)}
+.target-note{font-size:.66rem;color:var(--faint);margin-top:10px}
+
+.issue{display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:1px solid #EEF3F9}
+.issue:last-child{border-bottom:none;padding-bottom:2px}
+.issue .rank{width:24px;height:24px;border-radius:50%;background:var(--navy);color:#fff;font-size:.72rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none;margin-top:2px}
+.issue .body{flex:1;min-width:0}
+.issue .t{font-size:.82rem;font-weight:700;color:var(--ink)}
+.issue .m{font-size:.7rem;color:var(--muted);margin-top:2px}
+.issue .m .worse{color:var(--bad);font-weight:700}
+.issue .m .better{color:var(--good);font-weight:700}
+
+.q-item{border:1px solid var(--line);border-radius:10px;padding:12px 13px;margin-bottom:10px;background:#FCFDFF}
+.q-item:last-child{margin-bottom:0}
+.q-top{display:flex;justify-content:space-between;gap:8px;font-size:.72rem;color:var(--muted);margin-bottom:6px;align-items:center}
+.q-top b{color:var(--ink)}
+.q-age{color:var(--warn);font-weight:700;white-space:nowrap}
+.q-draft{font-size:.76rem;color:var(--ink);background:#fff;border:1px dashed var(--line2);border-radius:8px;padding:9px 11px;line-height:1.45}
+.q-draft[contenteditable="true"]{border-style:solid;border-color:var(--blue);outline:none;background:#FDFEFF}
+.q-note{font-size:.62rem;color:var(--gold-dark);font-weight:700;letter-spacing:.05em;margin:7px 0}
+.q-actions{display:flex;gap:7px;flex-wrap:wrap}
+.q-done{font-size:.74rem;color:var(--good);font-weight:700;padding:4px 0}
+
+.spark-wrap{margin-top:4px}
+.spark-meta{display:flex;justify-content:space-between;font-size:.68rem;color:var(--faint);margin-top:6px}
+
+/* ---------- drawers, modal, toast ---------- */
+.scrim{position:fixed;inset:0;background:rgba(16,35,64,.42);opacity:0;pointer-events:none;transition:opacity .2s;z-index:80}
+.scrim.show{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:430px;max-width:94vw;background:#fff;z-index:90;box-shadow:-12px 0 34px rgba(16,35,64,.22);transform:translateX(103%);transition:transform .24s ease;display:flex;flex-direction:column}
+.drawer.show{transform:translateX(0)}
+.d-head{background:var(--navy);color:#fff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.d-head .t{font-size:.95rem;font-weight:700}
+.d-head .k{font-size:.6rem;letter-spacing:.2em;color:#8CA0B3;font-weight:700;margin-bottom:3px}
+.x{color:#C9D6E4;font-size:1.25rem;line-height:1;padding:4px 8px;border-radius:6px}
+.x:hover{background:rgba(255,255,255,.12)}
+.d-body{flex:1;overflow-y:auto;padding:18px 20px;display:flex;flex-direction:column;gap:12px}
+.d-foot{border-top:1px solid var(--line);padding:12px 20px;font-size:.64rem;color:var(--faint);line-height:1.5;background:#FAFCFE}
+
+.bubble{max-width:88%;border-radius:12px;padding:11px 13px;font-size:.8rem;line-height:1.5}
+.b-user{align-self:flex-end;background:var(--navy);color:#fff;border-bottom-right-radius:4px}
+.b-ai{align-self:flex-start;background:var(--blue-soft);color:var(--ink);border-bottom-left-radius:4px;border:1px solid var(--line)}
+.b-ai .data{display:block;margin-top:7px;padding-top:7px;border-top:1px dashed var(--line2);font-size:.72rem;color:var(--muted)}
+.b-acts{align-self:flex-start;display:flex;gap:7px;flex-wrap:wrap;margin-top:-4px}
+.typing{align-self:flex-start;display:inline-flex;gap:4px;padding:12px 14px;background:var(--blue-soft);border:1px solid var(--line);border-radius:12px;border-bottom-left-radius:4px}
+.typing i{width:6px;height:6px;border-radius:50%;background:var(--faint);animation:blink 1.1s infinite}
+.typing i:nth-child(2){animation-delay:.18s}.typing i:nth-child(3){animation-delay:.36s}
+@keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+.sugg{display:flex;flex-wrap:wrap;gap:7px}
+.sugg button{font-size:.72rem;font-weight:600;color:var(--blue);border:1px solid var(--line2);background:#fff;padding:6px 11px;border-radius:99px}
+.sugg button:hover{background:var(--blue-soft)}
+.ask-input{display:flex;gap:8px;border-top:1px solid var(--line);padding:12px 16px;background:#fff}
+.ask-input input{flex:1;border:1px solid var(--line2);border-radius:9px;padding:10px 13px;font-size:.82rem;font-family:var(--font);color:var(--ink)}
+.ask-input input:focus{border-color:var(--blue);outline:none}
+.send{background:var(--navy);color:#fff;font-weight:700;font-size:.8rem;padding:0 17px;border-radius:9px}
+.send:hover{background:#1B3559}
+
+.tray-item{border:1px solid var(--line);border-radius:10px;padding:11px 13px;display:flex;gap:10px;align-items:flex-start}
+.tray-item .ic{width:26px;height:26px;border-radius:8px;background:var(--blue-soft);color:var(--blue);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;flex:none}
+.tray-item .b{flex:1;min-width:0}
+.tray-item .t{font-size:.79rem;font-weight:700;color:var(--ink)}
+.tray-item .m{font-size:.68rem;color:var(--muted);margin-top:3px;line-height:1.45}
+.tray-empty{text-align:center;color:var(--faint);font-size:.78rem;padding:30px 10px;line-height:1.6}
+
+.modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:95;padding:20px}
+.modal.show{display:flex}
+.m-card{background:#fff;border-radius:14px;max-width:560px;width:100%;box-shadow:0 24px 60px rgba(16,35,64,.35);overflow:hidden}
+.m-body{padding:18px 22px 22px}
+.m-stat{display:flex;gap:22px;margin:4px 0 14px;font-size:.76rem;color:var(--muted)}
+.m-stat b{display:block;font-size:1.15rem;color:var(--navy);font-weight:800}
+.m-case{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid #EEF3F9;font-size:.78rem;align-items:center}
+.m-case:last-of-type{border-bottom:none}
+.m-foot{display:flex;justify-content:flex-end;gap:8px;padding:0 22px 20px}
+.btn{font-size:.8rem;font-weight:700;padding:9px 16px;border-radius:9px}
+.btn-p{background:var(--navy);color:#fff}
+.btn-p:hover{background:#1B3559}
+.btn-g{border:1px solid var(--line2);color:var(--muted);background:#fff}
+.btn-g:hover{background:var(--paper)}
+
+#toasts{position:fixed;left:22px;bottom:22px;z-index:120;display:flex;flex-direction:column;gap:9px}
+.toast{background:var(--navy);color:#fff;font-size:.78rem;font-weight:600;padding:11px 15px;border-radius:10px;box-shadow:0 10px 26px rgba(16,35,64,.35);display:flex;align-items:center;gap:9px;animation:tin .25s ease}
+.toast .tk{color:#7FD8A8;font-weight:800}
+@keyframes tin{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
+
+.pagefoot{margin-top:26px;display:flex;gap:20px;flex-wrap:wrap;font-size:.68rem;color:var(--faint);align-items:center}
+.pagefoot b{color:var(--muted)}
+
+@media (max-width:1120px){.grid{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:640px){.kpis{grid-template-columns:1fr}.wrap{padding:16px 14px 50px}.topbar{padding:12px 14px}.hm{grid-template-columns:84px repeat(5,1fr);gap:5px}.cell{font-size:.7rem;padding:6px 2px}}
+@media print{.topbar,.subbar,.ask-input,.row-actions,.mini,.q-actions,#toasts{display:none !important}.panel{box-shadow:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="kicker">PRIME HEALTH GROUP &nbsp;·&nbsp; PATIENT 360</span>
+    <h1>MD Monday View <span class="live"><span class="live-dot"></span>LIVE</span></h1>
+  </div>
+  <span class="demo-chip">Illustrative data · Phase 0 replaces with Prime's actuals</span>
+  <div class="spacer"></div>
+  <div class="seg" role="tablist" aria-label="Emirate filter">
+    <button class="on" data-em="All" onclick="setEmirate('All')">All emirates</button>
+    <button data-em="Dubai" onclick="setEmirate('Dubai')">Dubai</button>
+    <button data-em="Sharjah" onclick="setEmirate('Sharjah')">Sharjah</button>
+    <button data-em="Ajman" onclick="setEmirate('Ajman')">Ajman</button>
+  </div>
+  <button class="tb-btn" onclick="openDrawer('tray')" aria-label="Open actions raised">
+    Actions <span class="badge" id="trayBadge">0</span>
+  </button>
+  <button class="tb-btn ask-btn" onclick="openDrawer('ask')">Ask Patient 360</button>
+</header>
+
+<div class="subbar">
+  <span><b>Monday view</b> · Week of 6 July 2026</span><span class="dot">|</span>
+  <span>Non-clinical service context only · clinical data stays behind the wall</span><span class="dot">|</span>
+  <span>Every complaint here has an owner and a clock</span>
+  <span class="chipbar" id="chanChip"></span>
+</div>
+
+<main class="wrap">
+
+  <!-- KPI STRIP -->
+  <section class="kpis" aria-label="Key indicators">
+    <div class="kpi"><div class="lab">EXPERIENCE INDEX</div><div class="val num" id="kExp">84</div><div class="sub" id="kExpSub"><span class="up">▲ 2</span> vs last week</div></div>
+    <div class="kpi"><div class="lab">RESPONSE PROMISE MET</div><div class="val num" id="kSla">91<small>%</small></div><div class="sub">against the 90% group standard</div></div>
+    <div class="kpi"><div class="lab">AVG FIRST RESPONSE</div><div class="val num" id="kResp">2.3<small>h</small></div><div class="sub" id="kRespSub"><span class="up">▼ 0.4h</span> faster than last week</div></div>
+    <div class="kpi"><div class="lab">OPEN CASES</div><div class="val num" id="kOpen">47</div><div class="sub" id="kOpenSub"><span class="warncol" id="kRisk">6 at risk</span> of missing the clock</div></div>
+    <div class="kpi"><div class="lab">AWAITING YOUR APPROVAL</div><div class="val num" id="kAppr">3</div><div class="sub">drafted replies · nothing publishes unsigned</div></div>
+  </section>
+
+  <div class="grid">
+    <!-- LEFT -->
+    <div class="col">
+      <section class="panel" aria-label="Centre by touchpoint heatmap">
+        <div class="panel-h">
+          <h2>Service health · emirate × touchpoint</h2>
+          <span class="hint">number = open cases · colour = response promise · click a cell to drill in</span>
+        </div>
+        <div class="hm" id="heatmap"></div>
+        <div class="legend">
+          <span class="lg"><span class="sw" style="background:var(--good-bg)"></span>On standard (≥90%)</span>
+          <span class="lg"><span class="sw" style="background:var(--warn-bg)"></span>Watch (80–89%)</span>
+          <span class="lg"><span class="sw" style="background:var(--bad-bg)"></span>Act (&lt;80%)</span>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="Live case worklist">
+        <div class="panel-h">
+          <h2>Live cases · one owner, one clock, each</h2>
+          <span class="hint" id="wlHint"></span>
+        </div>
+        <div style="overflow-x:auto">
+        <table>
+          <thead><tr>
+            <th>CASE</th><th>CHANNEL</th><th>WHERE</th><th>SENTIMENT</th><th>OWNER</th><th>CLOCK</th><th>STATUS</th><th style="text-align:right">ACTION</th>
+          </tr></thead>
+          <tbody id="wlBody"></tbody>
+        </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="col">
+      <section class="panel" aria-label="Channel response compliance">
+        <div class="panel-h"><h2>Response promise · by channel</h2><span class="hint">click to filter cases</span></div>
+        <div class="bars" id="chanBars"></div>
+        <div class="target-note">│ marker = 90% group standard · group average <b class="num">91%</b></div>
+      </section>
+
+      <section class="panel" aria-label="Top recurring issues">
+        <div class="panel-h"><h2>Top recurring issues</h2><span class="hint">this week</span></div>
+        <div id="issues"></div>
+      </section>
+
+      <section class="panel" aria-label="Approval queue">
+        <div class="panel-h"><h2>Approval queue</h2><span class="hint">AI drafts · humans approve</span></div>
+        <div id="queue"></div>
+      </section>
+
+      <section class="panel" aria-label="Sentiment trend">
+        <div class="panel-h"><h2>Experience index · 8 weeks</h2></div>
+        <div class="spark-wrap" id="spark"></div>
+        <div class="spark-meta"><span>Wk 21</span><span>index rebuilt weekly from all channels</span><span>Wk 28</span></div>
+      </section>
+    </div>
+  </div>
+
+  <div class="pagefoot">
+    <span><b>Patient 360</b> · non-clinical engagement layer</span>
+    <span>On-prem UAE · Dubai primary · Abu Dhabi DR</span>
+    <span>Patient identifiers masked on this screen (RG-••)</span>
+    <span>Demo runs entirely on this device · no data leaves the room</span>
+  </div>
+</main>
+
+<!-- DRILL MODAL -->
+<div class="scrim" id="scrimModal" onclick="closeModal()"></div>
+<div class="modal" id="drill" role="dialog" aria-modal="true" aria-labelledby="drillTitle">
+  <div class="m-card">
+    <div class="d-head"><div><div class="k">DRILL-DOWN</div><div class="t" id="drillTitle"></div></div><button class="x" onclick="closeModal()" aria-label="Close">×</button></div>
+    <div class="m-body" id="drillBody"></div>
+    <div class="m-foot">
+      <button class="btn btn-g" onclick="closeModal()">Close</button>
+      <button class="btn btn-p" id="drillAct"></button>
+    </div>
+  </div>
+</div>
+
+<!-- DRAWERS -->
+<div class="scrim" id="scrimDrawer" onclick="closeDrawers()"></div>
+
+<aside class="drawer" id="ask" role="dialog" aria-modal="true" aria-label="Ask Patient 360">
+  <div class="d-head"><div><div class="k">ASK PATIENT 360</div><div class="t">Query the group, act from here</div></div><button class="x" onclick="closeDrawers()" aria-label="Close">×</button></div>
+  <div class="d-body" id="chat">
+    <div class="bubble b-ai">Good morning, Dr. Jamil. Ask me about any centre, channel, touchpoint or case, and I will answer with this week's data and a next action.
+      <span class="data">This week: index 84 · promise met 91% · top issue: pharmacy waiting (12 centres)</span>
+    </div>
+    <div class="sugg" id="sugg"></div>
+  </div>
+  <div class="ask-input">
+    <input id="askIn" type="text" placeholder="e.g. Why is pharmacy waiting recurring?" aria-label="Ask a question">
+    <button class="send" onclick="sendAsk()">Ask</button>
+  </div>
+  <div class="d-foot">Demo runs fully on this device. In production: the model runs on-prem inside Prime's UAE data centre, answers only from Prime's own engagement data, and every outbound reply waits for human approval.</div>
+</aside>
+
+<aside class="drawer" id="tray" role="dialog" aria-modal="true" aria-label="Actions raised">
+  <div class="d-head"><div><div class="k">THIS SESSION</div><div class="t">Actions raised</div></div><button class="x" onclick="closeDrawers()" aria-label="Close">×</button></div>
+  <div class="d-body" id="trayBody"><div class="tray-empty">No actions raised yet.<br>Every button on this screen ends here: an owner, a due date, a trace.</div></div>
+  <div class="d-foot">Each action is logged to its case with owner, due time and closure evidence, and rolls up to next Monday's view.</div>
+</aside>
+
+<div id="toasts" aria-live="polite"></div>
+
+<script>
+'use strict';
+/* ================= DATA (illustrative) ================= */
+var TOUCHPOINTS = ['Reception','Booking','Nursing','Pharmacy','Billing'];
+var EMIRATES = ['Dubai','Sharjah','Ajman'];
+var HEAT = {
+  Dubai:   {Reception:[96,3], Booking:[88,5], Nursing:[95,2], Pharmacy:[84,6], Billing:[92,3], centres:'6 centres'},
+  Sharjah: {Reception:[86,4], Booking:[82,4], Nursing:[91,2], Pharmacy:[71,5], Billing:[87,2], centres:'4 centres'},
+  Ajman:   {Reception:[93,2], Booking:[90,3], Nursing:[94,1], Pharmacy:[83,4], Billing:[91,1], centres:'3 centres'}
+};
+var KPI = {
+  All:    {exp:84, expD:'▲ 2', sla:91, resp:'2.3', open:47, risk:6},
+  Dubai:  {exp:87, expD:'▲ 1', sla:94, resp:'1.8', open:19, risk:1},
+  Sharjah:{exp:78, expD:'▼ 1', sla:85, resp:'3.1', open:17, risk:4},
+  Ajman:  {exp:85, expD:'▲ 3', sla:92, resp:'2.1', open:11, risk:1}
+};
+var CHANNELS = [
+  {name:'WhatsApp', key:'WhatsApp', pct:92, icon:'chat'},
+  {name:'Call centre', key:'Call centre', pct:87, icon:'phone'},
+  {name:'Kiosk / CFS', key:'Kiosk', pct:78, icon:'kiosk'},
+  {name:'Email', key:'Email', pct:71, icon:'mail'},
+  {name:'App stores', key:'App store', pct:68, icon:'apps'},
+  {name:'Public reviews', key:'Google review', pct:64, icon:'star'}
+];
+var ISSUES = [
+  {t:'Pharmacy waiting', m:'12 centres · avg 34 min vs 18 min standard', trend:'<span class="worse">▲ 2 centres</span> vs last week', owner:'Group Pharmacy Operations Lead'},
+  {t:'Booking slot mismatch', m:'8 centres · confirmations vs HIS slot moves', trend:'<span class="better">▼ 1 centre</span> vs last week', owner:'Booking Systems Owner'},
+  {t:'Billing clarification', m:'6 centres · post-discharge itemised charges', trend:'flat vs last week', owner:'Group Billing Team Lead'}
+];
+var QUEUE = [
+  {id:'q1', src:'Google review · 2★ · Garhoud · Pharmacy', age:'waiting 52h', case:'PX-1046',
+   draft:'Thank you for telling us about the wait at our Garhoud pharmacy. This is not the standard we hold ourselves to. Our pharmacy lead has reviewed Thursday evening\u2019s queue and we have changed the refill cover for peak hours. We would welcome the chance to make your next visit right.'},
+  {id:'q2', src:'WhatsApp · booking reschedule · Dubai', age:'waiting 6h', case:'PX-1044',
+   draft:'We are sorry your confirmed slot was moved. We have held two options for you this week, Tuesday 10:20 or Wednesday 16:40, with the same consultant. Reply 1 or 2 and it is booked, with no queue on arrival.'},
+  {id:'q3', src:'App-store review · 1★ · booking flow', age:'waiting 3h', case:'PX-1038',
+   draft:'Thank you for the candid feedback on slot availability in the app. Your case is with our booking systems owner and the fix for same-day slot refresh is in test. We will reply here when it ships.'}
+];
+var CASES = [
+  {id:'PX-1047', chan:'WhatsApp', em:'Dubai', tp:'Reception', rg:'RG-58\u2022\u2022231', sent:'neg', owner:'Front Office Lead · Garhoud', secs:4320, status:'open'},
+  {id:'PX-1046', chan:'Google review', em:'Sharjah', tp:'Pharmacy', rg:'unmatched · public', sent:'neg', owner:'Review Desk Owner', secs:13200, status:'approval'},
+  {id:'PX-1044', chan:'App store', em:'Dubai', tp:'Booking', rg:'RG-41\u2022\u2022807', sent:'neg', owner:'Booking Systems Owner', secs:1320, status:'esc'},
+  {id:'PX-1043', chan:'Kiosk', em:'Sharjah', tp:'Nursing', rg:'RG-77\u2022\u2022114', sent:'pos', owner:'Nursing Supervisor · Sharjah', secs:0, status:'closed'},
+  {id:'PX-1042', chan:'Email', em:'Dubai', tp:'Billing', rg:'RG-63\u2022\u2022492', sent:'neg', owner:'Billing Team Lead', secs:-1440, status:'breached'},
+  {id:'PX-1041', chan:'WhatsApp', em:'Sharjah', tp:'Pharmacy', rg:'RG-29\u2022\u2022558', sent:'neg', owner:'Pharmacy Lead · Sharjah', secs:7500, status:'open'},
+  {id:'PX-1045', chan:'Call centre', em:'Ajman', tp:'Billing', rg:'RG-84\u2022\u2022303', sent:'neu', owner:'Billing Team Lead', secs:0, status:'resolved', note:'closed in 1.9h'},
+  {id:'PX-1040', chan:'Call centre', em:'Dubai', tp:'Reception', rg:'RG-12\u2022\u2022976', sent:'pos', owner:'Front Office Lead · Garhoud', secs:0, status:'closed'},
+  {id:'PX-1039', chan:'Google review', em:'Ajman', tp:'Reception', rg:'unmatched · public', sent:'neu', owner:'Review Desk Owner', secs:19080, status:'open'}
+];
+var TREND = [71,73,72,69,74,78,81,84];
+
+/* ================= ICONS ================= */
+function icon(n){
+  var p = {
+    phone:'<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.13.96.36 1.9.7 2.8a2 2 0 0 1-.45 2.11L8.1 9.9a16 16 0 0 0 6 6l1.3-1.27a2 2 0 0 1 2.1-.45c.9.34 1.85.57 2.8.7a2 2 0 0 1 1.7 2z"/>',
+    chat:'<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
+    mail:'<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/>',
+    kiosk:'<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>',
+    star:'<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
+    apps:'<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/>'
+  }[n] || '';
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+p+'</svg>';
+}
+function chanIcon(chan){
+  var map = {'WhatsApp':'chat','Call centre':'phone','Kiosk':'kiosk','Email':'mail','App store':'apps','Google review':'star'};
+  return icon(map[chan]||'chat');
+}
+
+/* ================= STATE ================= */
+var state = {emirate:'All', channel:null};
+var actions = [];
+
+/* ================= KPIs ================= */
+function renderKPIs(){
+  var k = KPI[state.emirate];
+  document.getElementById('kExp').textContent = k.exp;
+  var up = k.expD.indexOf('▲')===0;
+  document.getElementById('kExpSub').innerHTML = '<span class="'+(up?'up':'down')+'">'+k.expD+'</span> vs last week';
+  document.getElementById('kSla').innerHTML = k.sla+'<small>%</small>';
+  document.getElementById('kResp').innerHTML = k.resp+'<small>h</small>';
+  document.getElementById('kOpen').textContent = k.open;
+  document.getElementById('kRisk').textContent = k.risk+' at risk';
+}
+
+/* ================= HEATMAP ================= */
+function cellClass(p){ return p>=90 ? 'c-good' : (p>=80 ? 'c-warn' : 'c-bad'); }
+function renderHeatmap(){
+  var h = '<div></div>';
+  TOUCHPOINTS.forEach(function(t){ h += '<div class="hm-col">'+t.toUpperCase()+'</div>'; });
+  EMIRATES.forEach(function(em){
+    var dim = (state.emirate!=='All' && state.emirate!==em) ? ' hm-dim' : '';
+    h += '<div class="hm-row'+dim+'">'+em+'<small>'+HEAT[em].centres+'</small></div>';
+    TOUCHPOINTS.forEach(function(t){
+      var d = HEAT[em][t];
+      h += '<button class="cell '+cellClass(d[0])+dim+'" onclick="openDrill(\''+em+'\',\''+t+'\')" aria-label="'+em+' '+t+': promise met '+d[0]+' percent, '+d[1]+' open cases">'+d[1]+'<small>'+d[0]+'% met</small></button>';
+    });
+  });
+  document.getElementById('heatmap').innerHTML = h;
+}
+
+/* ================= CHANNEL BARS ================= */
+function renderChannels(){
+  var h = '';
+  CHANNELS.forEach(function(c){
+    var cls = c.pct>=90 ? '' : (c.pct>=80 ? ' mid' : ' low');
+    h += '<div class="bar-row">'
+      + '<button class="bar-name" onclick="setChannel(\''+c.key+'\')" title="Filter cases to '+c.name+'">'+chanIcon(c.key)+c.name+'</button>'
+      + '<div class="track"><div class="fill'+cls+'" style="width:'+c.pct+'%"></div><div class="target" style="left:90%"></div></div>'
+      + '<div class="bar-val num">'+c.pct+'%</div></div>';
+  });
+  document.getElementById('chanBars').innerHTML = h;
+}
+
+/* ================= ISSUES ================= */
+function renderIssues(){
+  var h = '';
+  ISSUES.forEach(function(iss, i){
+    h += '<div class="issue"><div class="rank">'+(i+1)+'</div><div class="body">'
+      + '<div class="t">'+iss.t+'</div><div class="m">'+iss.m+' · '+iss.trend+'</div></div>'
+      + '<button class="mini" onclick="raiseAction(\'Action plan · '+iss.t+'\',\''+iss.owner+'\',\'due in 3 days\',\'Top issues\')">Request action plan</button></div>';
+  });
+  document.getElementById('issues').innerHTML = h;
+}
+
+/* ================= APPROVAL QUEUE ================= */
+function renderQueue(){
+  var h = '';
+  QUEUE.forEach(function(q){
+    h += '<div class="q-item" id="'+q.id+'">'
+      + '<div class="q-top"><span><b>'+q.src+'</b> · '+q.case+'</span><span class="q-age">'+q.age+'</span></div>'
+      + '<div class="q-draft" id="'+q.id+'d">'+q.draft+'</div>'
+      + '<div class="q-note">DRAFTED BY PATIENT 360 · AWAITING HUMAN APPROVAL</div>'
+      + '<div class="q-actions">'
+      + '<button class="mini gold" onclick="approveDraft(\''+q.id+'\',\''+q.case+'\')">Approve &amp; publish</button>'
+      + '<button class="mini" id="'+q.id+'e" onclick="editDraft(\''+q.id+'\')">Edit</button>'
+      + '<button class="mini ghost" onclick="declineDraft(\''+q.id+'\')">Decline</button>'
+      + '</div></div>';
+  });
+  document.getElementById('queue').innerHTML = h;
+}
+var apprLeft = QUEUE.length;
+function approveDraft(id, cs){
+  var el = document.getElementById(id);
+  el.innerHTML = '<div class="q-done">✓ Approved by MD · published · logged to '+cs+'</div>';
+  apprLeft--; document.getElementById('kAppr').textContent = apprLeft;
+  toast('Reply published · logged to '+cs+' with your sign-off');
+}
+function declineDraft(id){
+  var el = document.getElementById(id);
+  el.innerHTML = '<div class="q-done" style="color:var(--muted)">Returned to owner for a new draft</div>';
+  apprLeft--; document.getElementById('kAppr').textContent = apprLeft;
+  toast('Draft returned to the case owner');
+}
+function editDraft(id){
+  var d = document.getElementById(id+'d'), b = document.getElementById(id+'e');
+  if(d.getAttribute('contenteditable')==='true'){
+    d.setAttribute('contenteditable','false'); b.textContent='Edit'; toast('Draft saved · your wording kept on the case');
+  } else {
+    d.setAttribute('contenteditable','true'); d.focus(); b.textContent='Save draft';
+  }
+}
+
+/* ================= WORKLIST ================= */
+function fmtClock(s){
+  if(s===0) return '';
+  var a = Math.abs(s), h = Math.floor(a/3600), m = Math.floor((a%3600)/60);
+  return (s<0?'+':'') + (h>0 ? h+'h '+String(m).padStart(2,'0')+'m' : m+'m '+String(a%60).padStart(2,'0')+'s');
+}
+function slaCls(c){ return c.secs<0 ? 'sla-bad' : (c.secs<=1800 ? 'sla-risk' : 'sla-ok'); }
+function visibleCases(){
+  return CASES.filter(function(c){
+    if(state.emirate!=='All' && c.em!==state.emirate) return false;
+    if(state.channel && c.chan!==state.channel) return false;
+    return true;
+  });
+}
+function statusChip(c){
+  if(c.status==='open') return '<span class="st st-open">OPEN</span>';
+  if(c.status==='esc') return '<span class="st st-esc">ESCALATED</span>';
+  if(c.status==='approval') return '<span class="st st-app">AWAITING APPROVAL</span>';
+  if(c.status==='breached') return '<span class="st st-brk">CLOCK BREACHED</span>';
+  return '<span class="st st-done">'+(c.status==='resolved'?'RESOLVED':'CLOSED')+'</span>';
+}
+function rowActions(c){
+  if(c.sent==='pos') return '<button class="mini" id="rec-'+c.id+'" onclick="recognise(\''+c.id+'\',\''+c.owner+'\')">Send recognition</button>';
+  if(c.status==='approval') return '<button class="mini gold" onclick="openDrawerFromRow()">Review draft</button>';
+  if(c.status==='resolved'||c.status==='closed') return '<button class="mini ghost" disabled>Logged</button>';
+  var esc = c.status==='esc' ? '<button class="mini ghost" disabled>Escalated ✓</button>' : '<button class="mini" onclick="escalate(\''+c.id+'\')">Escalate</button>';
+  return esc;
+}
+function renderWorklist(){
+  var rows = visibleCases(), h='';
+  rows.forEach(function(c){
+    var clock = c.secs===0 ? '<span class="sla" style="color:var(--faint)">—<small>'+(c.note||'CLOSED')+'</small></span>'
+      : '<span class="sla num '+slaCls(c)+'" id="clk-'+c.id+'">'+fmtClock(c.secs)+'<small>'+(c.secs<0?'OVER PROMISE':'LEFT ON PROMISE')+'</small></span>';
+    h += '<tr>'
+      + '<td><div class="case-id">'+c.id+'</div><div class="case-sub">'+c.rg+'</div></td>'
+      + '<td><span class="chan">'+chanIcon(c.chan)+c.chan+'</span></td>'
+      + '<td><b>'+c.em+'</b> · '+c.tp+'</td>'
+      + '<td><span class="sent s-'+c.sent+'"><i></i>'+(c.sent==='neg'?'Negative':c.sent==='pos'?'Positive':'Neutral')+'</span></td>'
+      + '<td class="owner">'+c.owner+'</td>'
+      + '<td>'+clock+'</td>'
+      + '<td>'+statusChip(c)+'</td>'
+      + '<td><div class="row-actions">'+rowActions(c)+'</div></td></tr>';
+  });
+  document.getElementById('wlBody').innerHTML = h || '<tr><td colspan="8" style="text-align:center;color:var(--faint);padding:26px">No cases match this view.</td></tr>';
+  var scope = (state.emirate==='All'?'group':state.emirate) + (state.channel ? ' · '+state.channel : '');
+  document.getElementById('wlHint').textContent = rows.length+' of '+CASES.length+' cases · '+scope;
+}
+function escalate(id){
+  var c = CASES.find(function(x){return x.id===id}); if(!c) return;
+  c.status='esc'; renderWorklist();
+  raiseAction('Escalation · '+id+' ('+c.em+' '+c.tp+')','Group Patient Experience Head','review today','Worklist');
+}
+function recognise(id, owner){
+  var b = document.getElementById('rec-'+id);
+  if(b){ b.textContent='Recognised ✓'; b.disabled=true; }
+  toast('Recognition sent for '+id+' · logged to '+owner+'\u2019s record');
+}
+function openDrawerFromRow(){ closeDrawers(); document.getElementById('queue').scrollIntoView({behavior:'smooth',block:'center'}); toast('Draft is in the approval queue, right column'); }
+
+/* live clocks */
+setInterval(function(){
+  CASES.forEach(function(c){
+    if(c.status==='resolved'||c.status==='closed'||c.secs===0) return;
+    c.secs -= 1;
+    var el = document.getElementById('clk-'+c.id);
+    if(el){
+      el.className = 'sla num '+slaCls(c);
+      el.innerHTML = fmtClock(c.secs)+'<small>'+(c.secs<0?'OVER PROMISE':'LEFT ON PROMISE')+'</small>';
+    }
+  });
+}, 1000);
+
+/* ================= SPARKLINE ================= */
+function renderSpark(){
+  var w=356,hh=92,pad=8,min=64,max=88;
+  var pts = TREND.map(function(v,i){
+    var x = pad + i*(w-2*pad)/(TREND.length-1);
+    var y = hh-pad - (v-min)/(max-min)*(hh-2*pad);
+    return [x,y];
+  });
+  var line = pts.map(function(p){return p[0].toFixed(1)+','+p[1].toFixed(1)}).join(' ');
+  var area = 'M'+pts[0][0]+','+(hh-2)+' L'+pts.map(function(p){return p[0].toFixed(1)+','+p[1].toFixed(1)}).join(' L')+' L'+pts[pts.length-1][0]+','+(hh-2)+' Z';
+  var last = pts[pts.length-1];
+  var s = '<svg viewBox="0 0 '+w+' '+hh+'" width="100%" height="'+hh+'" role="img" aria-label="Experience index trend, 8 weeks, rising from 71 to 84">'
+    + '<path d="'+area+'" fill="#EAF2FA"/>'
+    + '<polyline points="'+line+'" fill="none" stroke="#1D5B98" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'
+    + '<circle cx="'+last[0]+'" cy="'+last[1]+'" r="4.5" fill="#102340"/>'
+    + '<text x="'+(last[0]-8)+'" y="'+(last[1]-10)+'" font-size="13" font-weight="800" fill="#102340" font-family="inherit">84</text>'
+    + '</svg>';
+  document.getElementById('spark').innerHTML = s;
+}
+
+/* ================= FILTERS ================= */
+function setEmirate(em){
+  state.emirate = em;
+  document.querySelectorAll('.seg button').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-em')===em); });
+  renderKPIs(); renderHeatmap(); renderWorklist();
+}
+function setChannel(key){
+  state.channel = (state.channel===key) ? null : key;
+  var bar = document.getElementById('chanChip');
+  if(state.channel){
+    bar.className='chipbar show';
+    bar.innerHTML = '<span class="fchip">Channel: '+state.channel+' <button onclick="setChannel(\''+state.channel+'\')" aria-label="Clear channel filter">×</button></span>';
+  } else { bar.className='chipbar'; bar.innerHTML=''; }
+  renderWorklist();
+  if(state.channel) toast('Cases filtered to '+state.channel);
+}
+
+/* ================= DRILL ================= */
+var drillCtx = null;
+function openDrill(em, tp){
+  drillCtx = {em:em, tp:tp};
+  var d = HEAT[em][tp];
+  document.getElementById('drillTitle').textContent = em+' · '+tp;
+  var list = CASES.filter(function(c){return c.em===em && c.tp===tp});
+  var rows = list.length ? list.map(function(c){
+    return '<div class="m-case"><span><b>'+c.id+'</b> · '+c.chan+' · '+(c.sent==='neg'?'negative':c.sent==='pos'?'positive':'neutral')+'</span><span class="owner">'+c.owner+'</span></div>';
+  }).join('') : '<div class="m-case"><span style="color:var(--faint)">Older cases at this intersection are in the case log.</span></div>';
+  document.getElementById('drillBody').innerHTML =
+    '<div class="m-stat"><span><b class="num">'+d[0]+'%</b>promise met</span><span><b class="num">'+d[1]+'</b>open cases</span><span><b class="num">'+(d[0]>=90?'On':'Off')+'</b>standard</span></div>'
+    + '<div style="font-size:.66rem;letter-spacing:.12em;color:var(--faint);font-weight:700;margin-bottom:4px">CASES THIS WEEK</div>' + rows;
+  var btn = document.getElementById('drillAct');
+  btn.textContent = 'Request action plan · '+em+' '+tp;
+  btn.onclick = function(){
+    raiseAction('Action plan · '+em+' '+tp+' ('+d[0]+'% met, '+d[1]+' open)', em+' '+tp+' Lead', 'due in 3 days', 'Heatmap drill-down');
+    closeModal();
+  };
+  document.getElementById('scrimModal').classList.add('show');
+  document.getElementById('drill').classList.add('show');
+}
+function closeModal(){
+  document.getElementById('scrimModal').classList.remove('show');
+  document.getElementById('drill').classList.remove('show');
+}
+
+/* ================= ACTIONS TRAY ================= */
+function raiseAction(title, owner, due, src){
+  actions.unshift({title:title, owner:owner, due:due, src:src, t:new Date()});
+  var b = document.getElementById('trayBadge');
+  b.textContent = actions.length; b.classList.add('show');
+  renderTray();
+  toast('Action raised · '+owner+' · '+due);
+}
+function renderTray(){
+  var el = document.getElementById('trayBody');
+  if(!actions.length){ el.innerHTML = '<div class="tray-empty">No actions raised yet.<br>Every button on this screen ends here: an owner, a due date, a trace.</div>'; return; }
+  el.innerHTML = actions.map(function(a,i){
+    return '<div class="tray-item"><div class="ic">→</div><div class="b"><div class="t">'+a.title+'</div>'
+      + '<div class="m">Owner: <b>'+a.owner+'</b> · '+a.due+' · raised from '+a.src+'</div></div>'
+      + '<button class="mini" onclick="doneAction('+i+')">Mark done</button></div>';
+  }).join('');
+}
+function doneAction(i){
+  var a = actions.splice(i,1)[0];
+  var b = document.getElementById('trayBadge');
+  b.textContent = actions.length; if(!actions.length) b.classList.remove('show');
+  renderTray();
+  toast('Closed with evidence · '+a.title);
+}
+
+/* ================= ASK ================= */
+var SUGG = ['Why is pharmacy waiting recurring?','Which channel is missing the promise?','Anything waiting on my approval?','How is Sharjah this week?'];
+function renderSugg(){
+  document.getElementById('sugg').innerHTML = SUGG.map(function(s){
+    return '<button onclick="askPreset(this.textContent)">'+s+'</button>';
+  }).join('');
+}
+function askPreset(q){ document.getElementById('askIn').value = q; sendAsk(); }
+function sendAsk(){
+  var inp = document.getElementById('askIn'), q = inp.value.trim();
+  if(!q) return;
+  inp.value='';
+  addBubble('<div class="bubble b-user">'+escapeHtml(q)+'</div>');
+  var chat = document.getElementById('chat');
+  var t = document.createElement('div'); t.className='typing'; t.innerHTML='<i></i><i></i><i></i>';
+  chat.appendChild(t); chat.scrollTop = chat.scrollHeight;
+  setTimeout(function(){
+    t.remove();
+    var a = route(q.toLowerCase());
+    addBubble('<div class="bubble b-ai">'+a.text+(a.data?'<span class="data">'+a.data+'</span>':'')+'</div>');
+    if(a.acts && a.acts.length){
+      addBubble('<div class="b-acts">'+a.acts.map(function(x){return '<button class="mini gold" onclick="'+x.fn+'">'+x.label+'</button>'}).join('')+'</div>');
+    }
+  }, 650);
+}
+function addBubble(html){
+  var chat = document.getElementById('chat');
+  var d = document.createElement('div'); d.innerHTML = html;
+  while(d.firstChild){ chat.appendChild(d.firstChild); }
+  chat.scrollTop = chat.scrollHeight;
+}
+function escapeHtml(s){ return s.replace(/[&<>"]/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]}); }
+function route(q){
+  if(q.indexOf('pharmac')>-1) return {
+    text:'Pharmacy waiting is the top recurring issue: 12 centres this week, heaviest in Sharjah where the average wait is 34 minutes against the 18-minute standard. The pattern peaks 5–8pm on refill days, and Tuesday–Wednesday cover runs one pharmacist short.',
+    data:'Sharjah Pharmacy: 71% promise met · 5 open cases · group Pharmacy: 15 open',
+    acts:[{label:'Request action plan · Sharjah Pharmacy', fn:"raiseAction('Action plan · Sharjah Pharmacy (34 min avg wait)','Pharmacy Lead · Sharjah','due in 3 days','Ask')"},
+          {label:'Add daily wait-time watch', fn:"raiseAction('Daily pharmacy wait-time watch · all emirates','Group Pharmacy Operations Lead','starts tomorrow','Ask')"}]};
+  if(q.indexOf('sla')>-1 || q.indexOf('promise')>-1 || q.indexOf('channel')>-1 || q.indexOf('response')>-1) return {
+    text:'The group is at 91% against the 90% response promise. Two channels sit below standard: Email at 71% and Public reviews at 64%. Reviews are the exposure: three sit past 48 hours, all with drafted replies waiting for a signature.',
+    data:'WhatsApp 92 · Call 87 · Kiosk 78 · Email 71 · App stores 68 · Reviews 64',
+    acts:[{label:'Show me the drafts', fn:"closeDrawers();document.getElementById('queue').scrollIntoView({behavior:'smooth',block:'center'});toast('Approval queue, right column')"},
+          {label:'Reassign review-desk cover', fn:"raiseAction('Review-desk cover · weekends included','Group Patient Experience Head','decide this week','Ask')"}]};
+  if(q.indexOf('approv')>-1 || q.indexOf('review')>-1 || q.indexOf('google')>-1) return {
+    text:'Three public replies are waiting on human approval, the oldest 52 hours (Garhoud, pharmacy wait). All are drafted; nothing publishes without a signature.',
+    data:'Queue: Google review 52h · WhatsApp 6h · App-store 3h',
+    acts:[{label:'Open the approval queue', fn:"closeDrawers();document.getElementById('queue').scrollIntoView({behavior:'smooth',block:'center'});toast('Approval queue, right column')"}]};
+  if(q.indexOf('sharjah')>-1) return {
+    text:'Sharjah is this week\u2019s watch item: index 78, promise met 85%, average first response 3.1 hours. Pharmacy is the driver at 71% with five open cases; Reception and Booking sit just under standard.',
+    data:'Sharjah: 17 open · 4 at risk of the clock',
+    acts:[{label:'Filter the view to Sharjah', fn:"setEmirate('Sharjah');closeDrawers();toast('Viewing Sharjah')"},
+          {label:'Request action plan · Sharjah Pharmacy', fn:"raiseAction('Action plan · Sharjah Pharmacy','Pharmacy Lead · Sharjah','due in 3 days','Ask')"}]};
+  if(q.indexOf('dubai')>-1) return {
+    text:'Dubai is on standard: index 87, promise met 94%, first response 1.8 hours. The watch item is Booking: five slot-mismatch cases this week, mostly surfacing through the app stores.',
+    data:'Dubai: 19 open · 1 at risk',
+    acts:[{label:'Filter the view to Dubai', fn:"setEmirate('Dubai');closeDrawers();toast('Viewing Dubai')"}]};
+  if(q.indexOf('ajman')>-1) return {
+    text:'Ajman is steady: index 85, promise met 92%, first response 2.1 hours. Pharmacy is trending amber at 83%, worth one look before it repeats Sharjah\u2019s pattern.',
+    data:'Ajman: 11 open · 1 at risk',
+    acts:[{label:'Filter the view to Ajman', fn:"setEmirate('Ajman');closeDrawers();toast('Viewing Ajman')"}]};
+  if(q.indexOf('book')>-1) return {
+    text:'Booking slot mismatch shows in 8 centres: confirmations went out for slots the HIS later moved. Six in ten of these arrive through app-store reviews and WhatsApp, so patients are telling us in public first.',
+    data:'8 centres · trend improving, down 1 centre vs last week',
+    acts:[{label:'Request action plan · Booking', fn:"raiseAction('Action plan · booking slot sync with HIS','Booking Systems Owner','due in 5 days','Ask')"}]};
+  if(q.indexOf('bill')>-1) return {
+    text:'Billing clarification shows in 6 centres, almost all post-discharge calls about itemised charges. Seven in ten resolve on first contact; the fix is clearer discharge paperwork, not more call handling.',
+    data:'6 centres · flat vs last week',
+    acts:[{label:'Request action plan · Billing', fn:"raiseAction('Discharge billing one-pager · pilot two centres','Group Billing Team Lead','due in 1 week','Ask')"}]};
+  return {
+    text:'I can answer on any centre, channel, touchpoint or case, and hand you the action. Try one of the suggestions below, or name a place.',
+    data:'This week: index 84 · promise met 91% · 47 open · top issue: pharmacy waiting',
+    acts:[{label:'Why is pharmacy recurring?', fn:"askPreset('Why is pharmacy waiting recurring?')"},
+          {label:'How is Sharjah?', fn:"askPreset('How is Sharjah this week?')"}]};
+}
+
+/* ================= DRAWERS / TOAST ================= */
+function openDrawer(id){
+  closeDrawers();
+  document.getElementById('scrimDrawer').classList.add('show');
+  document.getElementById(id).classList.add('show');
+  if(id==='ask') setTimeout(function(){document.getElementById('askIn').focus()},250);
+}
+function closeDrawers(){
+  document.getElementById('scrimDrawer').classList.remove('show');
+  document.getElementById('ask').classList.remove('show');
+  document.getElementById('tray').classList.remove('show');
+}
+function toast(msg){
+  var t = document.createElement('div');
+  t.className='toast'; t.innerHTML='<span class="tk">✓</span>'+msg;
+  document.getElementById('toasts').appendChild(t);
+  setTimeout(function(){ t.style.opacity='0'; t.style.transition='opacity .4s'; setTimeout(function(){t.remove()},420); }, 3400);
+}
+document.addEventListener('keydown', function(e){
+  if(e.key==='Escape'){ closeDrawers(); closeModal(); }
+  if(e.key==='Enter' && document.activeElement===document.getElementById('askIn')) sendAsk();
+});
+
+/* ================= INIT ================= */
+renderKPIs(); renderHeatmap(); renderChannels(); renderIssues(); renderQueue(); renderWorklist(); renderSpark(); renderSugg();
+</script>
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Patient 360 — Non-Clinical Engagement</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            prime: {
+              navy:   '#0E2841',
+              blue:   '#156082',
+              orange: '#F37B20',
+              lblue:  '#0F9ED5',
+              gray:   '#6D6E70',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="/static/style.css?v=2" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+
+<body class="bg-gray-50 text-gray-900 font-sans h-screen flex flex-col overflow-hidden">
+
+  <!-- ── Top Bar ── -->
+  <header class="bg-white border-b-4 border-prime-orange flex items-center justify-between px-6 py-3 shrink-0 gap-4 shadow-sm">
+
+    <!-- Left: Logo -->
+    <div class="flex items-center gap-4 shrink-0">
+      <div class="text-prime-orange font-black text-xl tracking-wide">Patient 360</div>
+      <div class="border-l border-gray-200 pl-4">
+        <div class="text-gray-800 text-xs font-semibold tracking-wide uppercase">Non-Clinical Patient Engagement</div>
+        <div class="text-prime-orange text-xs font-medium">Staff Portal &nbsp;·&nbsp; Powered by Enterprise Minds</div>
+      </div>
+    </div>
+
+    <!-- Navigation tabs -->
+    <div class="flex items-center gap-2 shrink-0">
+      <a href="/" class="px-4 py-2 rounded-lg text-sm font-semibold bg-prime-orange text-white">
+        Staff View
+      </a>
+      <a href="/departments" class="px-4 py-2 rounded-lg text-sm text-prime-gray hover:text-gray-900 hover:bg-gray-100 transition-colors">
+        Department View
+      </a>
+    </div>
+
+    <!-- Centre: Patient Search -->
+    <div class="flex items-center gap-2 flex-1 max-w-sm">
+      <input
+        id="patient-search"
+        type="text"
+        placeholder="Search Patient ID (e.g. PH-502341)"
+        onkeydown="if(event.key==='Enter') searchPatient()"
+        class="flex-1 bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:border-prime-orange"
+      />
+      <button
+        onclick="searchPatient()"
+        class="bg-prime-orange hover:bg-orange-600 text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors shrink-0"
+      >Search</button>
+      <span id="search-msg" class="text-xs min-w-[80px]"></span>
+    </div>
+
+    <!-- Right: Status -->
+    <div class="flex items-center gap-6 text-sm text-prime-gray shrink-0">
+      <span class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+        Live Demo
+      </span>
+      <span class="text-gray-400 text-xs">eMINDS © 2026</span>
+    </div>
+  </header>
+
+  <!-- ── Alert Banner (hidden by default) ── -->
+  <div id="alert-banner" class="hidden alert-slide bg-red-600 border-b-2 border-red-400 px-6 py-3 flex items-center justify-between shrink-0">
+    <div class="flex items-center gap-3">
+      <span class="text-2xl">🚨</span>
+      <div>
+        <div class="font-bold text-white" id="alert-title">Alert</div>
+        <div class="text-red-100 text-sm" id="alert-body">—</div>
+      </div>
+    </div>
+    <button onclick="dismissAlert()" class="text-red-200 hover:text-white text-sm underline">Dismiss</button>
+  </div>
+
+  <!-- ── Main Three-Column Layout ── -->
+  <main class="flex flex-1 gap-0 overflow-hidden">
+
+    <!-- LEFT: Patient List -->
+    <aside class="w-60 bg-white border-r border-gray-200 flex flex-col shrink-0">
+      <div class="px-4 py-3 border-b border-gray-200">
+        <div class="text-xs text-prime-gray uppercase tracking-widest mb-2">All Patients</div>
+        <div class="flex gap-1">
+          <button onclick="sortPatients('desc')" id="sort-desc"
+            class="flex-1 text-xs py-1 px-2 rounded-md font-semibold transition-colors bg-prime-orange text-white">
+            🟢 Best first
+          </button>
+          <button onclick="sortPatients('asc')" id="sort-asc"
+            class="flex-1 text-xs py-1 px-2 rounded-md font-semibold transition-colors bg-gray-100 text-gray-500">
+            🔴 Worst first
+          </button>
+        </div>
+      </div>
+      <div id="patient-list" class="flex-1 overflow-y-auto p-2 space-y-2">
+        <div class="text-gray-400 text-sm p-3">Loading...</div>
+      </div>
+    </aside>
+
+    <!-- CENTRE: Patient Profile Widget -->
+    <section class="flex-1 flex flex-col overflow-hidden p-4 gap-4">
+
+      <!-- Profile Widget -->
+      <div id="profile-widget" class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 shrink-0">
+        <div class="text-gray-400 text-center py-6">← Select a patient or search by Patient ID</div>
+      </div>
+
+      <!-- Signal History -->
+      <div class="flex-1 bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col overflow-hidden">
+        <div class="px-5 py-3 border-b border-gray-200 flex items-center justify-between shrink-0">
+          <div class="font-semibold text-gray-800">Feedback History</div>
+          <div id="signal-count" class="text-gray-400 text-sm"></div>
+        </div>
+        <div id="signal-history" class="flex-1 overflow-y-auto p-4 space-y-3">
+          <div class="text-gray-400 text-sm text-center py-8">No patient selected</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: Staff Response Panel -->
+    <aside class="w-96 bg-white border-l border-gray-200 flex flex-col shrink-0 overflow-y-auto">
+
+      <!-- Header -->
+      <div class="px-5 py-4 border-b border-gray-200 shrink-0">
+        <div class="font-semibold text-gray-800">Staff Response</div>
+        <div id="response-patient-name" class="text-prime-gray text-xs mt-1">Select a patient to respond</div>
+      </div>
+
+      <div class="p-5 space-y-4 flex-1">
+
+        <!-- No patient warning -->
+        <div id="no-patient-warning" class="hidden text-amber-600 text-xs text-center py-4">
+          Please select a patient first
+        </div>
+
+        <!-- Suggested Actions -->
+        <div id="suggested-actions" class="hidden">
+          <div class="text-xs text-prime-orange font-semibold uppercase tracking-widest mb-3">
+            Suggested Actions
+          </div>
+          <div id="actions-list" class="space-y-2"></div>
+        </div>
+
+        <!-- Divider -->
+        <div id="response-divider" class="hidden border-t border-gray-200"></div>
+
+        <!-- Respond via channel -->
+        <div id="response-form" class="hidden space-y-4">
+          <div class="text-xs text-prime-gray uppercase tracking-widest font-semibold">Send Response to Patient</div>
+
+          <!-- Response channel -->
+          <div>
+            <label class="text-xs text-gray-500 uppercase tracking-widest mb-1 block">Respond via</label>
+            <select id="response-channel" class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 text-sm focus:outline-none focus:border-prime-orange">
+              <option value="whatsapp">💬 WhatsApp</option>
+              <option value="email">📧 Email</option>
+              <option value="phone">📞 Phone Call</option>
+              <option value="app">📱 Mobile App</option>
+            </select>
+          </div>
+
+          <!-- Quick templates -->
+          <div>
+            <label class="text-xs text-gray-500 uppercase tracking-widest mb-2 block">Quick Templates</label>
+            <div id="template-buttons" class="flex flex-wrap gap-2"></div>
+          </div>
+
+          <!-- Response message -->
+          <div>
+            <label class="text-xs text-gray-500 uppercase tracking-widest mb-1 block">Message</label>
+            <textarea
+              id="response-text"
+              rows="4"
+              placeholder="Write your response to the patient..."
+              class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:border-prime-orange resize-none"
+            ></textarea>
+          </div>
+
+          <!-- Send button -->
+          <button
+            id="send-response-btn"
+            onclick="sendResponse()"
+            class="w-full bg-prime-orange hover:bg-orange-600 text-white font-bold py-3 rounded-lg transition-colors text-sm tracking-wide disabled:opacity-50"
+          >
+            Send Response to Patient
+          </button>
+
+          <!-- Response confirmation -->
+          <div id="response-confirm" class="hidden bg-green-50 border border-green-300 rounded-lg p-3 text-xs text-green-700 text-center">
+            Response sent successfully
+          </div>
+        </div>
+
+      </div>
+    </aside>
+  </main>
+
+  <script src="/static/app.js?v=4"></script>
+</body>
+</html>

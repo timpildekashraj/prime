@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Patient Identity Resolution · Prime Health Group</title>
+<style>
+:root {
+  --navy:#102340; --blue:#1D5B98; --blue-soft:#EAF2FA;
+  --paper:#F4F7FB; --card:#fff; --line:#DFE8F2;
+  --good:#1E8E64; --good-bg:#E6F4EE;
+  --warn:#C98A1E; --warn-bg:#FBF1DC;
+  --bad:#C4534A; --bad-bg:#F9E9E7;
+  --orange:#E97132; --gold:#E8B54A;
+  --ink:#1F2B3D; --muted:#5B677A; --faint:#8CA0B3;
+  --font:"Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,Arial,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;min-height:100vh}
+
+/* HEADER */
+.topbar{background:var(--navy);color:#fff;padding:14px 28px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.brand-kicker{font-size:.6rem;letter-spacing:.22em;color:#8CA0B3;font-weight:600;display:block}
+.brand-title{font-size:1rem;font-weight:800;letter-spacing:.01em}
+.demo-chip{font-size:.62rem;font-weight:700;letter-spacing:.05em;color:#F3D9A2;border:1px solid rgba(232,181,74,.5);padding:3px 10px;border-radius:99px}
+.spacer{flex:1}
+.restart-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#fff;font-family:var(--font);font-size:.78rem;font-weight:700;padding:8px 16px;border-radius:8px;cursor:pointer;transition:background .15s}
+.restart-btn:hover{background:rgba(255,255,255,.2)}
+
+/* MAIN LAYOUT */
+.wrap{max-width:1400px;margin:0 auto;padding:24px 24px 60px}
+
+/* INTRO */
+.intro{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 24px;margin-bottom:20px;display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap}
+.intro-main{flex:1;min-width:240px}
+.intro-main h2{font-size:1.1rem;font-weight:800;color:var(--navy);margin-bottom:6px}
+.intro-main p{font-size:.82rem;color:var(--muted);line-height:1.6;max-width:620px}
+.intro-stats{display:flex;gap:20px;flex-wrap:wrap}
+.istat{text-align:center;background:var(--blue-soft);border:1px solid var(--line);border-radius:10px;padding:12px 18px;min-width:100px}
+.istat .iv{font-size:1.5rem;font-weight:900;color:var(--navy)}
+.istat .il{font-size:.62rem;letter-spacing:.1em;color:var(--faint);font-weight:700;margin-top:3px}
+
+/* 3-COLUMN GRID */
+.stage-grid{display:grid;grid-template-columns:300px 1fr 300px;gap:16px;align-items:start}
+
+/* SIGNALS PANEL */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(16,35,64,.05)}
+.panel-head{background:var(--navy);color:#fff;padding:12px 16px}
+.panel-head .ph-title{font-size:.85rem;font-weight:800}
+.panel-head .ph-sub{font-size:.65rem;color:#8CA0B3;margin-top:2px}
+
+.signal-card{padding:11px 14px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .15s;position:relative}
+.signal-card:last-child{border-bottom:none}
+.signal-card:hover{background:#F8FAFD}
+.signal-card.active{background:#EAF2FA;border-left:3px solid var(--blue)}
+.signal-card.matched{background:var(--good-bg);border-left:3px solid var(--good)}
+.signal-card.unmatched{background:var(--warn-bg);border-left:3px solid var(--warn)}
+
+.sc-top{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.sc-chan{font-size:.72rem;font-weight:800;color:var(--ink)}
+.sc-badge{font-size:.6rem;font-weight:700;letter-spacing:.05em;padding:2px 7px;border-radius:99px;margin-left:auto;white-space:nowrap}
+.badge-new{background:var(--blue-soft);color:var(--blue)}
+.badge-matched{background:var(--good-bg);color:var(--good)}
+.badge-partial{background:var(--warn-bg);color:var(--warn)}
+
+.sc-id{font-size:.68rem;color:var(--muted);margin-bottom:4px;font-family:monospace}
+.sc-text{font-size:.72rem;color:var(--ink);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.sc-conf{font-size:.65rem;font-weight:700;margin-top:4px}
+.conf-high{color:var(--good)}.conf-med{color:var(--warn)}.conf-low{color:var(--bad)}
+
+.match-tick{position:absolute;top:10px;right:12px;font-size:1rem;opacity:0;transition:opacity .3s}
+.matched .match-tick{opacity:1}
+
+/* WATERFALL PANEL */
+.waterfall-wrap{display:flex;flex-direction:column;gap:10px}
+
+.layer{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;transition:box-shadow .2s}
+.layer.active-layer{box-shadow:0 0 0 2px var(--blue),0 4px 16px rgba(29,91,152,.15)}
+.layer.done-layer{border-color:var(--good)}
+
+.layer-head{padding:12px 16px;display:flex;align-items:center;gap:10px;cursor:pointer}
+.layer-num{width:26px;height:26px;border-radius:50%;background:var(--blue);color:#fff;font-size:.72rem;font-weight:900;display:flex;align-items:center;justify-content:center;flex:none;transition:background .3s}
+.done-layer .layer-num{background:var(--good)}
+.layer-title{font-size:.82rem;font-weight:800;color:var(--navy);flex:1}
+.layer-status{font-size:.68rem;font-weight:700;padding:3px 9px;border-radius:99px;white-space:nowrap}
+.ls-waiting{background:#F3F4F6;color:var(--faint)}
+.ls-running{background:var(--blue-soft);color:var(--blue);animation:pulse-bg 1s infinite alternate}
+.ls-done{background:var(--good-bg);color:var(--good)}
+.ls-skip{background:#F3F4F6;color:var(--faint)}
+@keyframes pulse-bg{from{opacity:.8}to{opacity:1}}
+
+.layer-body{padding:0 16px 14px;display:none}
+.layer.open .layer-body{display:block}
+.layer-desc{font-size:.72rem;color:var(--muted);margin-bottom:10px;line-height:1.5}
+
+.match-attempt{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;margin-bottom:5px;font-size:.72rem;background:#F8FAFD;border:1px solid var(--line);opacity:0;transform:translateY(4px);transition:opacity .3s,transform .3s}
+.match-attempt.show{opacity:1;transform:none}
+.ma-sig{font-weight:700;color:var(--ink);flex:1}
+.ma-result{font-size:.65rem;font-weight:800;padding:2px 8px;border-radius:99px}
+.r-hit{background:var(--good-bg);color:var(--good)}
+.r-miss{background:#F3F4F6;color:var(--faint)}
+.r-fuzzy{background:var(--warn-bg);color:var(--warn)}
+.r-ai{background:#F3E8FF;color:#7C3AED}
+
+.confidence-bar{height:5px;border-radius:99px;background:#E5E7EB;margin-top:3px;overflow:hidden}
+.confidence-fill{height:100%;border-radius:99px;background:var(--blue);width:0;transition:width .8s ease}
+
+/* RESULT PANEL */
+.unified-card{padding:16px}
+.uc-avatar{width:48px;height:48px;border-radius:12px;background:var(--navy);color:#fff;font-size:1.1rem;font-weight:900;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+.uc-name{font-size:1rem;font-weight:800;color:var(--navy)}
+.uc-name-ar{font-size:.8rem;color:var(--muted);margin-top:2px;direction:rtl}
+.uc-mrn{font-size:.68rem;font-family:monospace;color:var(--blue);font-weight:700;margin-top:4px}
+.uc-divider{height:1px;background:var(--line);margin:12px 0}
+
+.uc-field{display:flex;justify-content:space-between;gap:8px;margin-bottom:6px;font-size:.75rem}
+.uc-label{color:var(--faint);font-weight:700;font-size:.65rem;letter-spacing:.08em}
+.uc-val{color:var(--ink);font-weight:600;text-align:right}
+
+.signals-merged{margin-top:10px}
+.sm-label{font-size:.65rem;letter-spacing:.1em;font-weight:700;color:var(--faint);margin-bottom:7px}
+.sm-chip{display:inline-flex;align-items:center;gap:5px;background:var(--blue-soft);border:1px solid var(--line);color:var(--blue);font-size:.68rem;font-weight:700;padding:3px 9px;border-radius:99px;margin:2px;opacity:0;transform:scale(.9);transition:opacity .3s,transform .3s}
+.sm-chip.show{opacity:1;transform:none}
+.sm-chip.unmatched-chip{background:var(--warn-bg);border-color:#EED9A6;color:var(--warn)}
+
+.confidence-section{margin-top:12px}
+.cs-label{font-size:.65rem;letter-spacing:.1em;font-weight:700;color:var(--faint);margin-bottom:7px}
+.cs-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:.7rem}
+.cs-name{color:var(--muted);width:80px;font-weight:600;flex:none}
+.cs-bar-wrap{flex:1;height:6px;background:#E5E7EB;border-radius:99px;overflow:hidden}
+.cs-fill{height:100%;border-radius:99px;background:var(--blue);width:0;transition:width 1s ease}
+.cs-pct{color:var(--navy);font-weight:800;width:32px;text-align:right;flex:none}
+
+/* QUEUE */
+.queue-panel{margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.queue-head{background:var(--warn-bg);border-bottom:1px solid #EED9A6;padding:11px 16px;display:flex;align-items:center;gap:8px}
+.queue-head .qh-title{font-size:.8rem;font-weight:800;color:var(--warn)}
+.queue-head .qh-sub{font-size:.68rem;color:var(--warn);opacity:.8;margin-left:auto}
+.queue-item{padding:10px 14px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center;opacity:0;transform:translateX(6px);transition:opacity .3s,transform .3s}
+.queue-item.show{opacity:1;transform:none}
+.queue-item:last-child{border-bottom:none}
+.qi-icon{font-size:1.2rem;flex:none}
+.qi-body{flex:1;min-width:0}
+.qi-title{font-size:.75rem;font-weight:700;color:var(--ink)}
+.qi-sub{font-size:.65rem;color:var(--muted);margin-top:2px}
+.qi-action{font-size:.68rem;font-weight:700;color:var(--blue);border:1px solid var(--line);background:#fff;padding:4px 10px;border-radius:7px;cursor:pointer;white-space:nowrap}
+.qi-action:hover{background:var(--blue-soft)}
+
+/* FLOW LINE */
+.flow-connector{display:flex;align-items:center;justify-content:center;padding:4px 0;color:var(--faint);font-size:1.1rem}
+
+/* STEP INDICATOR */
+.step-bar{display:flex;align-items:center;gap:6px;margin-bottom:16px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 16px;flex-wrap:wrap}
+.step-item{display:flex;align-items:center;gap:6px;font-size:.7rem;font-weight:600;color:var(--faint)}
+.step-item.active{color:var(--blue)}
+.step-item.done{color:var(--good)}
+.step-dot{width:8px;height:8px;border-radius:50%;background:currentColor;opacity:.5}
+.step-item.active .step-dot,.step-item.done .step-dot{opacity:1}
+.step-arrow{color:var(--line);font-size:.8rem}
+
+/* SCENARIO SELECTOR */
+.scenario-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.sc-tab{background:var(--card);border:1px solid var(--line);border-radius:9px;padding:9px 15px;font-size:.75rem;font-weight:700;color:var(--muted);cursor:pointer;transition:background .15s,color .15s;font-family:var(--font)}
+.sc-tab:hover{background:var(--blue-soft);color:var(--blue)}
+.sc-tab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+/* TOAST */
+#toasts{position:fixed;left:22px;bottom:22px;z-index:120;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--navy);color:#fff;font-size:.78rem;font-weight:600;padding:10px 14px;border-radius:9px;box-shadow:0 8px 24px rgba(16,35,64,.3);display:flex;align-items:center;gap:8px;animation:tin .2s ease}
+.toast .tk{color:#7FD8A8;font-weight:800}
+@keyframes tin{from{transform:translateY(6px);opacity:0}to{transform:none;opacity:1}}
+
+/* HIGHLIGHT */
+@keyframes highlight-row{0%{background:#FEF3C7}100%{background:transparent}}
+
+@media(max-width:1100px){.stage-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:720px){.stage-grid{grid-template-columns:1fr}.intro-stats{gap:10px}}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div>
+    <span class="brand-kicker">PRIME HEALTH GROUP &nbsp;·&nbsp; PATIENT 360 PLATFORM</span>
+    <span class="brand-title">Patient Identity Resolution — Live POC</span>
+  </div>
+  <span class="demo-chip">CEO BRIEFING · POC DEMO</span>
+  <div class="spacer"></div>
+  <button class="restart-btn" onclick="restart()">↺ Run Again</button>
+</header>
+
+<div class="wrap">
+
+  <!-- INTRO -->
+  <div class="intro">
+    <div class="intro-main">
+      <h2>The problem we solve: same patient, 6 different identities</h2>
+      <p>A patient complains on WhatsApp using their nickname. The same person leaves a Google review without a phone number. Then visits the kiosk with their MRN card. Without identity resolution, these look like <strong>three different people</strong>. Our 5-layer matching engine links them in real time — so every staff member sees the full picture before the patient reaches the desk.</p>
+    </div>
+    <div class="intro-stats">
+      <div class="istat"><div class="iv">5</div><div class="il">MATCH LAYERS</div></div>
+      <div class="istat"><div class="iv" id="istat-matched">0</div><div class="il">SIGNALS LINKED</div></div>
+      <div class="istat"><div class="iv" id="istat-conf">—</div><div class="il">AVG CONFIDENCE</div></div>
+      <div class="istat"><div class="iv" id="istat-time">—</div><div class="il">MATCH TIME</div></div>
+    </div>
+  </div>
+
+  <!-- SCENARIO SELECTOR -->
+  <div class="scenario-bar">
+    <span style="font-size:.75rem;font-weight:700;color:var(--muted);align-self:center">Scenario:</span>
+    <button class="sc-tab active" onclick="loadScenario(0,this)">Alias mismatch (Ahmed)</button>
+    <button class="sc-tab" onclick="loadScenario(1,this)">Transliteration (Fatima / فاطمة)</button>
+    <button class="sc-tab" onclick="loadScenario(2,this)">Anonymous review + HIS match</button>
+    <button class="sc-tab" onclick="loadScenario(3,this)">New walk-in (no MRN)</button>
+  </div>
+
+  <!-- STEP BAR -->
+  <div class="step-bar" id="stepBar">
+    <div class="step-item" id="step-0"><div class="step-dot"></div>Signals arrive</div>
+    <div class="step-arrow">›</div>
+    <div class="step-item" id="step-1"><div class="step-dot"></div>Layer 1: Exact</div>
+    <div class="step-arrow">›</div>
+    <div class="step-item" id="step-2"><div class="step-dot"></div>Layer 2: Composite</div>
+    <div class="step-arrow">›</div>
+    <div class="step-item" id="step-3"><div class="step-dot"></div>Layer 3: Fuzzy</div>
+    <div class="step-arrow">›</div>
+    <div class="step-item" id="step-4"><div class="step-dot"></div>Layer 4: AI</div>
+    <div class="step-arrow">›</div>
+    <div class="step-item" id="step-5"><div class="step-dot"></div>Unified profile</div>
+  </div>
+
+  <!-- 3-COL GRID -->
+  <div class="stage-grid">
+
+    <!-- LEFT: INCOMING SIGNALS -->
+    <div class="panel" id="signalsPanel">
+      <div class="panel-head">
+        <div class="ph-title">Incoming signals · raw</div>
+        <div class="ph-sub">Arriving from 6 channels · no pre-processing</div>
+      </div>
+      <div id="signalsList"></div>
+    </div>
+
+    <!-- MIDDLE: WATERFALL -->
+    <div>
+      <div class="waterfall-wrap" id="waterfallWrap"></div>
+      <!-- QUEUE -->
+      <div class="queue-panel" id="queuePanel" style="display:none">
+        <div class="queue-head">
+          <span class="qh-title">⚠ Unmatched Queue · Human Review</span>
+          <span class="qh-sub">Layer 5</span>
+        </div>
+        <div id="queueList"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: UNIFIED PROFILE -->
+    <div class="panel" id="resultPanel">
+      <div class="panel-head">
+        <div class="ph-title">Unified Patient Profile</div>
+        <div class="ph-sub">Single record · built in real time</div>
+      </div>
+      <div class="unified-card" id="unifiedCard">
+        <div style="text-align:center;padding:40px 10px;color:var(--faint);font-size:.8rem">
+          Waiting for signals to resolve…
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+'use strict';
+
+/* ===================== SCENARIOS ===================== */
+var SCENARIOS = [
+  {
+    name: 'Ahmed — alias mismatch across 4 channels',
+    patient: {
+      name: 'Ahmed Khalid Al Mansouri',
+      nameAr: 'أحمد خالد المنصوري',
+      mrn: 'PHG-2024-07821',
+      dob: '15 Mar 1985',
+      phone: '+971 50 123 4567',
+      emiratesId: '784-1985-1234567-1',
+      language: 'Arabic / English',
+      nationality: 'Emirati',
+      lastVisit: '9 Jul 2026',
+      score: 71,
+      band: 'amber',
+    },
+    signals: [
+      { id:'S1', chan:'🖥️ Kiosk', raw:'MRN: PHG-2024-07821', text:'Rated experience 2/5 at check-in. Wait time complaint.', identifiers:['MRN: PHG-2024-07821'], badge:'NEW' },
+      { id:'S2', chan:'💬 WhatsApp', raw:'+971 50 123 4567', text:'"Abu Khalid" — very disappointed with pharmacy queue, 45 minutes waiting.', identifiers:['Phone: +971 50 123 4567','Name: Abu Khalid (alias)'], badge:'NEW' },
+      { id:'S3', chan:'📞 Contact Centre', raw:'Ahmed Al Mansouri · DOB 15/03/85', text:'Called to complain about billing statement. High frustration.', identifiers:['Name: Ahmed Al Mansouri','DOB: 15/03/1985'], badge:'NEW' },
+      { id:'S4', chan:'⭐ Google Review', raw:'A. Mansouri (no phone)', text:'1 star — "Waited forever for my prescription. Staff were unfriendly."', identifiers:['Name: A. Mansouri','No phone / no MRN'], badge:'NEW' },
+      { id:'S5', chan:'🏥 Doctify', raw:'Emirates ID: 784-1985-1234567-1', text:'Left a 2-star review on Doctify for cardiology consultation.', identifiers:['Emirates ID: 784-1985-1234567-1'], badge:'NEW' },
+      { id:'S6', chan:'📱 Prime App', raw:'User ID: APP-990234 · unlinked MRN', text:'App feedback: "Your app is slow and the booking keeps failing."', identifiers:['App User ID: APP-990234','MRN: not yet linked in app'], badge:'NEW' },
+    ],
+    layers: [
+      { title:'Layer 1: Exact Match', desc:'Instant match on guaranteed-unique identifiers: MRN, Emirates ID, or verified phone number (OTP-confirmed). Zero ambiguity — these signals link immediately.', attempts:[
+          { sig:'S1 · Kiosk', key:'MRN: PHG-2024-07821', result:'hit', label:'MRN exact hit', conf:100 },
+          { sig:'S5 · Doctify', key:'Emirates ID: 784-1985-1234567-1', result:'hit', label:'Emirates ID hit', conf:100 },
+          { sig:'S2 · WhatsApp', key:'+971 50 123 4567', result:'hit', label:'OTP-verified phone hit', conf:100 },
+          { sig:'S3 · Contact Centre', key:'Name + DOB', result:'miss', label:'No exact key → Layer 2', conf:0 },
+          { sig:'S4 · Google Review', key:'A. Mansouri (no ID)', result:'miss', label:'No exact key → Layer 2', conf:0 },
+          { sig:'S6 · Prime App', key:'App ID: APP-990234', result:'miss', label:'App not linked → Layer 2', conf:0 },
+      ]},
+      { title:'Layer 2: Composite Match', desc:'Combines name + date of birth + phone number. Any two of three must agree (configurable). Handles minor typos in name fields automatically.', attempts:[
+          { sig:'S3 · Contact Centre', key:'Ahmed Al Mansouri + 15/03/1985', result:'hit', label:'Name + DOB composite match → 98%', conf:98 },
+          { sig:'S4 · Google Review', key:'A. Mansouri (no DOB, no phone)', result:'miss', label:'Insufficient fields → Layer 3', conf:0 },
+          { sig:'S6 · Prime App', key:'No name/DOB available', result:'miss', label:'App meta only → Layer 3', conf:0 },
+      ]},
+      { title:'Layer 3: Fellegi-Sunter Probabilistic', desc:'Statistical record linkage model. Scores partial name matches, transliterations (Ahmed vs Ahmad), and Arabic name variants using field-level probability weights. Threshold: 85%.', attempts:[
+          { sig:'S4 · Google Review', key:'"A. Mansouri" vs "Ahmed Khalid Al Mansouri"', result:'fuzzy', label:'Name token overlap → 87% confidence', conf:87 },
+          { sig:'S6 · Prime App', key:'App-only meta, no name', result:'miss', label:'Below threshold → Layer 4', conf:0 },
+      ]},
+      { title:'Layer 4: AI Contextual Match', desc:'Gemini 2.5 Flash reads the signal text, extracts context clues (department, complaint topic, visit timing) and cross-references with the HIS visit history to resolve edge cases.', attempts:[
+          { sig:'S6 · Prime App', key:'App complaint + cardiology visit Jul 9', result:'ai', label:'AI matched: same dept + visit window → 81%', conf:81 },
+      ]},
+    ],
+    unmatched: [],
+  },
+
+  {
+    name: 'Fatima — Arabic transliteration across channels',
+    patient: {
+      name: 'Fatima Hassan Al Zaabi',
+      nameAr: 'فاطمة حسن الزعابي',
+      mrn: 'PHG-2023-04412',
+      dob: '22 Jun 1990',
+      phone: '+971 55 987 6543',
+      emiratesId: '784-1990-7654321-2',
+      language: 'Arabic',
+      nationality: 'Emirati',
+      lastVisit: '8 Jul 2026',
+      score: 88,
+      band: 'green',
+    },
+    signals: [
+      { id:'S1', chan:'💬 WhatsApp', raw:'+971 55 987 6543', text:'Fatima Al Zaabi — Thank you for the nurse, she was wonderful.', identifiers:['Phone: +971 55 987 6543'], badge:'NEW' },
+      { id:'S2', chan:'⭐ Google Review', raw:'Fatema Al Za\'abi', text:'4 stars — "Very good doctors, but reception was slow today."', identifiers:['Name: Fatema Al Za\'abi (transliteration)'], badge:'NEW' },
+      { id:'S3', chan:'📋 Kiosk Survey', raw:'فاطمة الزعابي', text:'Rated nurse as excellent. Doctor consultation very clear.', identifiers:['Name: فاطمة الزعابي (Arabic script)'], badge:'NEW' },
+      { id:'S4', chan:'📞 Contact Centre', raw:'Fathima Hassan — DOB 22/06/1990', text:'Called to reschedule appointment. Happy with the experience.', identifiers:['Name: Fathima Hassan (variant)','DOB: 22/06/1990'], badge:'NEW' },
+    ],
+    layers: [
+      { title:'Layer 1: Exact Match', desc:'Check for MRN, Emirates ID, OTP-verified phone. Phone number on WhatsApp is OTP-confirmed — instant link.', attempts:[
+          { sig:'S1 · WhatsApp', key:'+971 55 987 6543', result:'hit', label:'OTP-verified phone → exact match', conf:100 },
+          { sig:'S2 · Google Review', key:'No phone or ID', result:'miss', label:'No exact key → Layer 2', conf:0 },
+          { sig:'S3 · Kiosk', key:'Arabic name only', result:'miss', label:'No exact key → Layer 2', conf:0 },
+          { sig:'S4 · Contact Centre', key:'Name + DOB', result:'miss', label:'No exact key → Layer 2', conf:0 },
+      ]},
+      { title:'Layer 2: Composite Match', desc:'Name + DOB matching. "Fathima Hassan" with DOB 22/06/1990 scores against HIS record.', attempts:[
+          { sig:'S4 · Contact Centre', key:'Fathima Hassan + 22/06/1990', result:'hit', label:'Name variant + DOB → 96% composite match', conf:96 },
+          { sig:'S2 · Google Review', key:'Fatema Al Za\'abi (no DOB)', result:'miss', label:'Insufficient fields → Layer 3', conf:0 },
+          { sig:'S3 · Kiosk', key:'فاطمة الزعابي (Arabic, no DOB)', result:'miss', label:'Script mismatch → Layer 3', conf:0 },
+      ]},
+      { title:'Layer 3: Fellegi-Sunter Probabilistic', desc:'Arabic↔Latin transliteration model. "Fatema" = "Fatima" = "Fathima" = "فاطمة" are scored as equivalent variants. "Al Za\'abi" = "Al Zaabi" = "الزعابي" matched by phonetic similarity.', attempts:[
+          { sig:'S2 · Google Review', key:'"Fatema Al Za\'abi" → transliteration scoring', result:'fuzzy', label:'Phonetic + token match → 91% confidence', conf:91 },
+          { sig:'S3 · Kiosk', key:'"فاطمة الزعابي" → Arabic romanisation', result:'fuzzy', label:'Arabic script match → 94% confidence', conf:94 },
+      ]},
+      { title:'Layer 4: AI Contextual Match', desc:'No signals required for AI layer in this scenario — all resolved by Layer 3.', attempts:[
+          { sig:'All signals', key:'N/A', result:'miss', label:'All resolved in Layer 3 — AI layer not needed', conf:0 },
+      ]},
+    ],
+    unmatched: [],
+  },
+
+  {
+    name: 'Anonymous Google review → HIS visit match',
+    patient: {
+      name: 'Omar Saeed Al Hashimi',
+      nameAr: 'عمر سعيد الهاشمي',
+      mrn: 'PHG-2022-11098',
+      dob: '3 Nov 1978',
+      phone: 'Unlisted',
+      emiratesId: 'Not provided',
+      language: 'Arabic / English',
+      nationality: 'Emirati',
+      lastVisit: '10 Jul 2026',
+      score: 55,
+      band: 'red',
+    },
+    signals: [
+      { id:'S1', chan:'⭐ Google Review', raw:'Omar S. (anonymous reviewer)', text:'1 star — "The orthopaedics department needs serious improvement. I waited 2 hours on July 10th morning."', identifiers:['Name: Omar S. (partial)','Dept: Orthopaedics','Date: Jul 10 morning'], badge:'NEW' },
+      { id:'S2', chan:'📞 Contact Centre', raw:'Omar Hashimi · no DOB', text:'Called to escalate a complaint about his orthopaedic consultation on July 10.', identifiers:['Name: Omar Hashimi','No DOB provided'], badge:'NEW' },
+      { id:'S3', chan:'🖥️ Kiosk', raw:'MRN: PHG-2022-11098', text:'Kiosk check-in on Jul 10 08:45. Rated wait time 1/5.', identifiers:['MRN: PHG-2022-11098'], badge:'NEW' },
+    ],
+    layers: [
+      { title:'Layer 1: Exact Match', desc:'Kiosk provides MRN on check-in — immediate anchor for this patient.', attempts:[
+          { sig:'S3 · Kiosk', key:'MRN: PHG-2022-11098', result:'hit', label:'MRN exact match → anchor established', conf:100 },
+          { sig:'S1 · Google Review', key:'Omar S. (anonymous)', result:'miss', label:'Anonymous → Layer 2', conf:0 },
+          { sig:'S2 · Contact Centre', key:'Omar Hashimi (no DOB)', result:'miss', label:'Partial name → Layer 2', conf:0 },
+      ]},
+      { title:'Layer 2: Composite Match', desc:'Contact Centre signal: "Omar Hashimi" without DOB is insufficient for full composite — falls through to Layer 3.', attempts:[
+          { sig:'S2 · Contact Centre', key:'Omar Hashimi (no DOB, no phone)', result:'miss', label:'Missing fields → Layer 3', conf:0 },
+          { sig:'S1 · Google Review', key:'Anonymous — no identifiers', result:'miss', label:'No fields → Layer 4', conf:0 },
+      ]},
+      { title:'Layer 3: Fellegi-Sunter Probabilistic', desc:'"Omar Hashimi" vs "Omar Saeed Al Hashimi" — name token subset matching. "Hashimi" is a strong token match to "Al Hashimi".', attempts:[
+          { sig:'S2 · Contact Centre', key:'"Omar Hashimi" token vs HIS name', result:'fuzzy', label:'Surname token match → 88% confidence', conf:88 },
+          { sig:'S1 · Google Review', key:'Anonymous — no name tokens', result:'miss', label:'Cannot score → Layer 4', conf:0 },
+      ]},
+      { title:'Layer 4: AI Contextual Match', desc:'AI reads the Google review: "orthopaedics, July 10 morning, 2-hour wait" — cross-references HIS visit log. Finds one orthopaedic patient checking in at 08:45 on Jul 10. Context match confirmed.', attempts:[
+          { sig:'S1 · Google Review', key:'Dept + date + wait description → HIS lookup', result:'ai', label:'Context + visit log match → 83% confidence', conf:83 },
+      ]},
+    ],
+    unmatched: [],
+  },
+
+  {
+    name: 'New walk-in — no MRN, never registered',
+    patient: {
+      name: 'Rania Khalil Darwish',
+      nameAr: 'رانيا خليل درويش',
+      mrn: 'PHG-NEW-PENDING',
+      dob: '11 Apr 1995',
+      phone: '+971 52 344 8891',
+      emiratesId: 'Pending verification',
+      language: 'Arabic',
+      nationality: 'Lebanese expat',
+      lastVisit: 'First visit — Jul 13 2026',
+      score: null,
+      band: 'new',
+    },
+    signals: [
+      { id:'S1', chan:'💬 WhatsApp', raw:'+971 52 344 8891', text:'Rania — "I had a bad experience today at reception. This is my first time visiting and I felt ignored."', identifiers:['Phone: +971 52 344 8891','Name: Rania'], badge:'NEW' },
+      { id:'S2', chan:'📋 Kiosk Survey', raw:'Rania Darwish · no MRN', text:'First-time visitor survey. Complained about registration process and wait.', identifiers:['Name: Rania Darwish','No MRN (first visit)'], badge:'NEW' },
+      { id:'S3', chan:'⭐ Google Review', raw:'Rania K. (new patient)', text:'2 stars — First visit, registration was confusing. No staff to guide us.', identifiers:['Name: Rania K.','Described as first-time visitor'], badge:'NEW' },
+    ],
+    layers: [
+      { title:'Layer 1: Exact Match', desc:'No MRN in HIS — this is a first-time visitor. WhatsApp phone is OTP-confirmed but no HIS record exists to match against.', attempts:[
+          { sig:'S1 · WhatsApp', key:'+971 52 344 8891 (OTP verified)', result:'miss', label:'Phone confirmed but no HIS record → create stub', conf:0 },
+          { sig:'S2 · Kiosk', key:'No MRN', result:'miss', label:'First visit — no HIS record', conf:0 },
+          { sig:'S3 · Google Review', key:'Anonymous partial name', result:'miss', label:'No match possible → Layer 2', conf:0 },
+      ]},
+      { title:'Layer 2: Composite Match', desc:'WhatsApp provides phone + name "Rania". Kiosk provides "Rania Darwish". Together they form a composite that links these two signals to each other (cross-signal linking, not HIS linking).', attempts:[
+          { sig:'S1+S2 · Cross-signal', key:'Rania + phone on WhatsApp, Rania Darwish on Kiosk', result:'hit', label:'Cross-signal composite → 95% (linked to each other)', conf:95 },
+          { sig:'S3 · Google Review', key:'"Rania K." only', result:'miss', label:'Insufficient → Layer 3', conf:0 },
+      ]},
+      { title:'Layer 3: Fellegi-Sunter Probabilistic', desc:'"Rania K." — single token. "Rania Darwish" first name matches. "K." initial does not contradict "Khalil". Low but above threshold.', attempts:[
+          { sig:'S3 · Google Review', key:'"Rania K." vs "Rania Khalil Darwish"', result:'fuzzy', label:'First name + initial → 79% confidence (borderline)', conf:79 },
+      ]},
+      { title:'Layer 4: AI Contextual Match', desc:'AI validates: all three signals describe a first-time visitor experience on the same day, at reception, same centre. Temporal + thematic coherence confirms grouping.', attempts:[
+          { sig:'S3 · Google Review', key:'First-visit theme + same-day + reception complaint', result:'ai', label:'Context coherence confirms grouping → 86%', conf:86 },
+      ]},
+    ],
+    unmatched: [
+      { icon:'👤', title:'New patient record to be created', sub:'Rania Khalil Darwish · +971 52 344 8891 · First visit Jul 13 · 3 signals linked' },
+    ],
+  },
+];
+
+/* ===================== STATE ===================== */
+var currentScenario = 0;
+var scenario = null;
+var running = false;
+var timers = [];
+
+/* ===================== INIT ===================== */
+function loadScenario(idx, btn) {
+  if(btn) {
+    document.querySelectorAll('.sc-tab').forEach(function(b){ b.classList.remove('active'); });
+    btn.classList.add('active');
+  }
+  currentScenario = idx;
+  scenario = SCENARIOS[idx];
+  running = false;
+  timers.forEach(clearTimeout); timers = [];
+  resetUI();
+  setTimeout(runAnimation, 400);
+}
+
+function restart() {
+  loadScenario(currentScenario, null);
+}
+
+function resetUI() {
+  document.getElementById('istat-matched').textContent = '0';
+  document.getElementById('istat-conf').textContent = '—';
+  document.getElementById('istat-time').textContent = '—';
+
+  // Reset steps
+  for(var i=0;i<=5;i++){
+    var s = document.getElementById('step-'+i);
+    if(s){ s.className='step-item'; }
+  }
+
+  // Render signals
+  var html = '';
+  scenario.signals.forEach(function(s){
+    html += '<div class="signal-card" id="sc-'+s.id+'">'
+      + '<div class="sc-top"><span class="sc-chan">'+s.chan+'</span><span class="sc-badge badge-new" id="badge-'+s.id+'">'+s.badge+'</span></div>'
+      + '<div class="sc-id">'+s.identifiers.join(' · ')+'</div>'
+      + '<div class="sc-text">'+s.text+'</div>'
+      + '<div class="sc-conf" id="conf-'+s.id+'"></div>'
+      + '<div class="match-tick" id="tick-'+s.id+'">✓</div>'
+      + '</div>';
+  });
+  document.getElementById('signalsList').innerHTML = html;
+
+  // Render waterfall layers
+  var whtml = '';
+  scenario.layers.forEach(function(l,i){
+    whtml += '<div class="layer" id="layer-'+i+'">'
+      + '<div class="layer-head" onclick="toggleLayer('+i+')">'
+      + '<div class="layer-num">'+(i+1)+'</div>'
+      + '<div class="layer-title">'+l.title+'</div>'
+      + '<span class="layer-status ls-waiting" id="ls-'+i+'">Waiting</span>'
+      + '</div>'
+      + '<div class="layer-body">'
+      + '<div class="layer-desc">'+l.desc+'</div>'
+      + '<div id="attempts-'+i+'"></div>'
+      + '</div>'
+      + '</div>';
+  });
+  document.getElementById('waterfallWrap').innerHTML = whtml;
+
+  // Reset result
+  document.getElementById('unifiedCard').innerHTML = '<div style="text-align:center;padding:40px 10px;color:var(--faint);font-size:.8rem">Waiting for signals to resolve…</div>';
+  document.getElementById('queuePanel').style.display = 'none';
+  document.getElementById('queueList').innerHTML = '';
+}
+
+/* ===================== ANIMATION ===================== */
+var LAYER_DELAY = 1800;
+var ATTEMPT_DELAY = 500;
+
+function t(fn, ms) {
+  var id = setTimeout(fn, ms);
+  timers.push(id);
+  return id;
+}
+
+function runAnimation() {
+  if(running) return;
+  running = true;
+  var startMs = Date.now();
+
+  setStep(0, 'active');
+  t(function(){ setStep(0,'done'); runLayers(0, startMs); }, 800);
+}
+
+function runLayers(layerIdx, startMs) {
+  if(layerIdx >= scenario.layers.length) {
+    showResult(startMs);
+    return;
+  }
+  var layer = scenario.layers[layerIdx];
+  setStep(layerIdx+1, 'active');
+  openLayer(layerIdx);
+  setLayerStatus(layerIdx, 'running');
+
+  var delay = 0;
+  layer.attempts.forEach(function(att, ai) {
+    delay += ATTEMPT_DELAY;
+    t(function(){ showAttempt(layerIdx, att); }, delay);
+  });
+
+  delay += LAYER_DELAY;
+  t(function(){
+    setLayerStatus(layerIdx, 'done');
+    setStep(layerIdx+1, 'done');
+    runLayers(layerIdx+1, startMs);
+  }, delay);
+}
+
+function showAttempt(layerIdx, att) {
+  var el = document.createElement('div');
+  el.className = 'match-attempt';
+  el.id = 'att-'+layerIdx+'-'+att.sig.replace(/[^a-z0-9]/gi,'');
+  var resultClass = att.result==='hit' ? 'r-hit' : att.result==='fuzzy' ? 'r-fuzzy' : att.result==='ai' ? 'r-ai' : 'r-miss';
+  var resultLabel = att.result==='hit' ? '✓ MATCHED' : att.result==='fuzzy' ? '≈ FUZZY' : att.result==='ai' ? '🤖 AI' : '→ NEXT';
+  el.innerHTML = '<div style="flex:1;min-width:0">'
+    + '<div style="font-size:.72rem;font-weight:700;color:var(--ink)">' + att.sig + '</div>'
+    + '<div style="font-size:.65rem;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + att.key + '</div>'
+    + (att.conf>0 ? '<div class="confidence-bar"><div class="confidence-fill" id="cf-'+layerIdx+'-'+att.sig.replace(/[^a-z0-9]/gi,'')+'" style="width:0;background:'+(att.result==='fuzzy'?'#C98A1E':att.result==='ai'?'#7C3AED':'var(--blue)')+'"></div></div>' : '')
+    + '</div>'
+    + '<span class="ma-result '+resultClass+'">'+resultLabel+'</span>';
+  document.getElementById('attempts-'+layerIdx).appendChild(el);
+  t(function(){
+    el.classList.add('show');
+    if(att.conf>0) {
+      t(function(){
+        var fill = document.getElementById('cf-'+layerIdx+'-'+att.sig.replace(/[^a-z0-9]/gi,''));
+        if(fill) fill.style.width = att.conf+'%';
+      }, 200);
+    }
+    // Mark signal card
+    if(att.result==='hit'||att.result==='fuzzy'||att.result==='ai') {
+      var sigId = att.sig.split('·')[0].trim().replace(/[^A-Z0-9]/gi,'');
+      markSignalMatched(att.sig, att.label, att.conf);
+    }
+  }, 50);
+}
+
+function markSignalMatched(sigRef, label, conf) {
+  // Extract signal ID from attempt string like "S1 · Kiosk"
+  var match = sigRef.match(/S\d+/);
+  if(!match) return;
+  var sid = match[0];
+  var card = document.getElementById('sc-'+sid);
+  var badge = document.getElementById('badge-'+sid);
+  var confEl = document.getElementById('conf-'+sid);
+  if(!card) return;
+  card.classList.add('matched');
+  if(badge){ badge.className='sc-badge badge-matched'; badge.textContent='MATCHED'; }
+  if(confEl && conf>0){ confEl.innerHTML='<span class="conf-high">'+conf+'% confidence · '+label+'</span>'; }
+
+  // Update stats
+  var matched = document.querySelectorAll('.signal-card.matched').length;
+  document.getElementById('istat-matched').textContent = matched;
+}
+
+function showResult(startMs) {
+  var elapsed = ((Date.now()-startMs)/1000).toFixed(1)+'s';
+  var p = scenario.patient;
+
+  setStep(5,'active');
+  t(function(){
+    setStep(5,'done');
+
+    // Calculate avg confidence
+    var confs = [];
+    scenario.layers.forEach(function(l){ l.attempts.forEach(function(a){ if(a.conf>0) confs.push(a.conf); }); });
+    var avg = confs.length ? Math.round(confs.reduce(function(a,b){return a+b},0)/confs.length) : 0;
+
+    document.getElementById('istat-conf').textContent = avg+'%';
+    document.getElementById('istat-time').textContent = elapsed;
+
+    var scoreHtml = p.score
+      ? '<div style="margin-top:8px"><span style="font-size:.65rem;letter-spacing:.1em;font-weight:700;color:var(--faint)">EXPERIENCE SCORE</span><div style="font-size:1.5rem;font-weight:900;color:'+(p.band==='red'?'var(--bad)':p.band==='amber'?'var(--warn)':'var(--good)')+'">'+p.score+'<small style="font-size:.7rem;font-weight:700"> / 100</small></div></div>'
+      : '<div style="margin-top:8px;font-size:.72rem;color:var(--muted)">No score yet — first visit. Profile created.</div>';
+
+    var html = '<div class="uc-avatar">'+p.name[0]+'</div>'
+      + '<div class="uc-name">'+p.name+'</div>'
+      + (p.nameAr?'<div class="uc-name-ar">'+p.nameAr+'</div>':'')
+      + '<div class="uc-mrn">'+p.mrn+'</div>'
+      + scoreHtml
+      + '<div class="uc-divider"></div>'
+      + '<div class="uc-field"><span class="uc-label">DATE OF BIRTH</span><span class="uc-val">'+p.dob+'</span></div>'
+      + '<div class="uc-field"><span class="uc-label">PHONE</span><span class="uc-val">'+p.phone+'</span></div>'
+      + '<div class="uc-field"><span class="uc-label">LANGUAGE</span><span class="uc-val">'+p.language+'</span></div>'
+      + '<div class="uc-field"><span class="uc-label">NATIONALITY</span><span class="uc-val">'+p.nationality+'</span></div>'
+      + '<div class="uc-field"><span class="uc-label">LAST VISIT</span><span class="uc-val">'+p.lastVisit+'</span></div>'
+      + '<div class="uc-divider"></div>'
+      + '<div class="signals-merged">'
+      + '<div class="sm-label">SIGNALS LINKED TO THIS PROFILE</div>'
+      + '<div id="chipsRow"></div>'
+      + '</div>'
+      + '<div class="confidence-section">'
+      + '<div class="cs-label">MATCH CONFIDENCE BY LAYER</div>'
+      + '<div id="confRows"></div>'
+      + '</div>';
+
+    document.getElementById('unifiedCard').innerHTML = html;
+
+    // Animate chips
+    var chips = '';
+    scenario.signals.forEach(function(s){ chips += '<span class="sm-chip" id="chip-'+s.id+'">'+s.chan+'</span>'; });
+    document.getElementById('chipsRow').innerHTML = chips;
+    scenario.signals.forEach(function(s,i){
+      t(function(){ var c=document.getElementById('chip-'+s.id); if(c) c.classList.add('show'); }, i*120);
+    });
+
+    // Confidence rows
+    var layerConfs = scenario.layers.map(function(l){
+      var best = 0;
+      l.attempts.forEach(function(a){ if(a.conf>best) best=a.conf; });
+      return { title: l.title.split(':')[1]||l.title, conf:best };
+    });
+    var chtml = layerConfs.map(function(lc,i){
+      return '<div class="cs-row"><span class="cs-name">'+lc.title.trim()+'</span><div class="cs-bar-wrap"><div class="cs-fill" id="csf-'+i+'"></div></div><span class="cs-pct">'+lc.conf+'%</span></div>';
+    }).join('');
+    document.getElementById('confRows').innerHTML = chtml;
+    layerConfs.forEach(function(lc,i){
+      t(function(){ var f=document.getElementById('csf-'+i); if(f) f.style.width=lc.conf+'%'; }, i*200+100);
+    });
+
+    // Unmatched queue
+    if(scenario.unmatched && scenario.unmatched.length) {
+      document.getElementById('queuePanel').style.display='block';
+      scenario.unmatched.forEach(function(q,i){
+        var item = document.createElement('div');
+        item.className='queue-item';
+        item.innerHTML='<div class="qi-icon">'+q.icon+'</div><div class="qi-body"><div class="qi-title">'+q.title+'</div><div class="qi-sub">'+q.sub+'</div></div><button class="qi-action">Assign to team</button>';
+        document.getElementById('queueList').appendChild(item);
+        t(function(){ item.classList.add('show'); }, i*200+200);
+      });
+    }
+
+    toast('✓ All '+scenario.signals.length+' signals resolved · unified profile built in '+elapsed);
+  }, 600);
+}
+
+/* ===================== UI HELPERS ===================== */
+function openLayer(idx) {
+  document.querySelectorAll('.layer').forEach(function(l,i){
+    if(i===idx) { l.classList.add('open','active-layer'); }
+    else { l.classList.remove('active-layer'); }
+  });
+}
+
+function toggleLayer(idx) {
+  var l = document.getElementById('layer-'+idx);
+  l.classList.toggle('open');
+}
+
+function setLayerStatus(idx, status) {
+  var el = document.getElementById('ls-'+idx);
+  var layer = document.getElementById('layer-'+idx);
+  if(!el) return;
+  el.className = 'layer-status';
+  if(status==='running'){ el.classList.add('ls-running'); el.textContent='Running…'; }
+  else if(status==='done'){ el.classList.add('ls-done'); el.textContent='Done'; layer.classList.add('done-layer'); }
+  else { el.classList.add('ls-waiting'); el.textContent='Waiting'; }
+}
+
+function setStep(idx, state) {
+  var el = document.getElementById('step-'+idx);
+  if(!el) return;
+  el.className = 'step-item' + (state==='active' ? ' active' : state==='done' ? ' done' : '');
+}
+
+function toast(msg) {
+  var t = document.createElement('div');
+  t.className='toast'; t.innerHTML='<span class="tk">✓</span>'+msg;
+  document.getElementById('toasts').appendChild(t);
+  setTimeout(function(){ t.style.opacity='0'; t.style.transition='opacity .4s'; setTimeout(function(){t.remove()},420); }, 4000);
+}
+
+/* ===================== START ===================== */
+window.addEventListener('load', function(){ loadScenario(0,null); });
+</script>
+</body>
+</html>
